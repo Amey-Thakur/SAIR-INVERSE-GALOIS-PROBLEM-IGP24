@@ -30,10 +30,9 @@ The Inverse Galois Problem over $\mathbb{Q}$ remains an open frontier. Degree 24
 *   **[`scripts/`](./scripts/)**: The working pipeline: `generate_submission.py`, `validate_submission.py`, `build_api_payload.py`.
 *   **[`data/`](./data/)**: The frozen LMFDB baseline CSV used for exclusion and threshold comparison.
 *   **[`docs/`](./docs/)**: Competition mechanics, mathematical background, and strategy literature.
-*   **[`src/datasets/`](./src/datasets/)**: Baseline loader over `data/lmfdb_baseline.csv`.
-*   **[`src/evaluation/`](./src/evaluation/)**: PARI/GP discriminant wrapper and a fast format pre-filter.
-*   **[`src/search/`](./src/search/)**: Coefficient perturbation for local discriminant optimization.
-*   **[`src/submission/`](./src/submission/)**: Candidate aggregation into the 1,000 line submission limit.
+*   **[`src/datasets/`](./src/datasets/)**: Baseline loader over `data/lmfdb_baseline.csv` (pairs and thresholds).
+*   **[`src/evaluation/`](./src/evaluation/)**: PARI/GP wrapper for exact and mixed discriminants.
+*   **[`src/search/`](./src/search/)**: Coefficient perturbation for local discriminant minimization.
 
 ---
 

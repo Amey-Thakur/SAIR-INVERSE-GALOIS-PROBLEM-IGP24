@@ -47,3 +47,6 @@ data/
 *.swp
 *.swo
 .DS_Store
+
+# Generated submission artifacts
+scripts/api_payload.json

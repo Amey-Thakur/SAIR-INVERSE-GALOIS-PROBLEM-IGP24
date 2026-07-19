@@ -37,6 +37,7 @@ The signature is typically denoted by the number of real roots $r$ (where $r \in
 
 ## Advanced Structures
 
-- **Resolvents**: Auxiliary polynomials constructed from the roots of $f(x)$. They are critical for identifying Galois groups without computing the full splitting field.
-- **Hilbert Irreducibility Theorem**: Guarantees that generic polynomials parameterized by $t$ will yield the desired Galois group for infinitely many specialized rational integer values of $t$.
-- **Mathieu Groups**: Degree 24 contains the highly complex Mathieu group $M_{24}$ ($24T_{25000}$), representing one of the most challenging isolated targets in the competition.
+- **Resolvents**: Auxiliary polynomials constructed from the roots of $f(x)$. They are central to identifying Galois groups without computing the full splitting field.
+- **Hilbert Irreducibility Theorem**: Guarantees that generic polynomials parameterized by $t$ yield the desired Galois group for infinitely many specialized rational integer values of $t$.
+- **Largest groups**: $24T_{25000}$ is the full symmetric group $S_{24}$, and the second largest is the alternating group $A_{24}$. Dense random polynomials fall into these, which makes them the least rewarding targets. The value lies in the rare solvable and imprimitive groups.
+- **Mathieu groups**: The 5-transitive Mathieu group $M_{24}$ on 24 points is one of the hardest non-solvable targets in this degree. Its cousin $M_{23}$ is the single unresolved case in degree 23 ($23T_5$).
