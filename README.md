@@ -25,21 +25,26 @@ The Inverse Galois Problem over $\mathbb{Q}$ remains an open frontier. Degree 24
 
 ## Directory Architecture
 
+*   **[`submission.txt`](./submission.txt)**: The ready submission artifact, 840 verified degree 24 monic irreducible polynomials.
+*   **[`SUBMISSION.md`](./SUBMISSION.md)**: How the batch is built, checked, and sent to the evaluator.
+*   **[`scripts/`](./scripts/)**: The working pipeline: `generate_submission.py`, `validate_submission.py`, `build_api_payload.py`.
+*   **[`data/`](./data/)**: The frozen LMFDB baseline CSV used for exclusion and threshold comparison.
 *   **[`docs/`](./docs/)**: Competition mechanics, mathematical background, and strategy literature.
-*   **[`src/datasets/`](./src/datasets/)**: LMFDB baseline synchronization clients.
-*   **[`src/evaluation/`](./src/evaluation/)**: PARI/GP discriminant wrappers and sandbox format verifiers.
-*   **[`src/search/`](./src/search/)**: Mathematical search scaffolds and coefficient optimization algorithms.
-*   **[`src/submission/`](./src/submission/)**: Pipeline compilers for 1,000-line daily submission limits.
-*   **[`scripts/`](./scripts/)**: Standalone utilities.
+*   **[`src/datasets/`](./src/datasets/)**: Baseline loader over `data/lmfdb_baseline.csv`.
+*   **[`src/evaluation/`](./src/evaluation/)**: PARI/GP discriminant wrapper and a fast format pre-filter.
+*   **[`src/search/`](./src/search/)**: Coefficient perturbation for local discriminant optimization.
+*   **[`src/submission/`](./src/submission/)**: Candidate aggregation into the 1,000 line submission limit.
 
 ---
 
 ## Development Workflow
 
-1. **Synchronization**: Execute `src/datasets/lmfdb_client.py` to map current baseline discriminants.
-2. **Evaluation**: Run `src/evaluation/verifier.py` to validate polynomial formatting locally.
-3. **Scoring**: Evaluate exact discriminants using `src/evaluation/discriminant.py` prior to remote submission.
-4. **Submission**: Aggregate candidate polynomials using `src/submission/compiler.py`.
+1. **Baseline**: `py src/datasets/lmfdb_client.py` reports the frozen baseline (286 labels, 622 pairs) and the exact `nfdisc` thresholds a submission must beat to unlock a baseline pair.
+2. **Generate**: `py scripts/generate_submission.py` writes `submission.txt` from cyclotomic, composition, and trinomial families, excluding every baseline polynomial.
+3. **Validate**: `py scripts/validate_submission.py` re-derives every rule from scratch and must print `PASS`, proving each line irreducible, monic, degree 24, and baseline free.
+4. **Submit**: upload `submission.txt` on the competition page, or `py scripts/build_api_payload.py` then POST `scripts/api_payload.json` to the API. See [`SUBMISSION.md`](./SUBMISSION.md).
+
+The `24Tt` Galois label and real root count are computed by the official Magma verifier; this repository never claims a group it cannot prove.
 
 ---
 
