@@ -1,22 +1,25 @@
 # ==============================================================================
 # File: verifier.py
-# Description: Sandbox simulator validating the exact IGP24 submission format.
+# Description: Fast format pre-filter for a single submission line: 25 integer
+#   coefficients, monic, nonzero constant term. This is a cheap gate for
+#   streaming candidates; it does NOT check irreducibility. The authoritative
+#   pre-submission gate, which also proves irreducibility over Q and rejects
+#   baseline duplicates, is scripts/validate_submission.py.
 # Tech Stack: Python 3.10+
 # ==============================================================================
 
 def verify_polynomial_line(line: str) -> bool:
     """
-    Validates a single string against the strict SAIR IGP24 constraints.
-    
-    Format: 25 comma-separated integers.
-    Ascending powers: a_0, a_1, ..., a_24
-    Monic: a_24 == 1
-    Irreducible (trivial check): a_0 != 0
+    Format check against the IGP24 coefficient rules.
+
+    25 comma-separated integers, ascending powers a_0..a_24, monic (a_24 == 1),
+    nonzero constant term (a_0 != 0). A trailing '#' comment is allowed and
+    ignored. Irreducibility is left to scripts/validate_submission.py.
     """
-    line = line.strip()
+    line = line.split("#", 1)[0].strip()
     if not line:
         return False
-        
+
     parts = line.split(",")
     if len(parts) != 25:
         return False
@@ -54,6 +57,6 @@ def verify_file(filepath: str) -> tuple[int, int]:
     return valid, total
 
 if __name__ == "__main__":
-    # Example valid line (x^24 - 1 ... wait, x^24 - 1 has a_0 = -1, a_24 = 1, others 0)
-    example = "-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1"
-    print(f"Validation: {verify_polynomial_line(example)}")
+    # x^24 + x + 1, the format example from the competition rules.
+    example = "1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1"
+    print(f"Format valid: {verify_polynomial_line(example)}")

@@ -13,11 +13,16 @@
 
 from __future__ import annotations
 
+import csv
+from pathlib import Path
+
 import numpy as np
 import sympy as sp
 from sympy import Poly, cyclotomic_poly, compose, factorint, totient
 
 x = sp.symbols("x")
+
+BASELINE_CSV = Path(__file__).resolve().parents[1] / "data" / "lmfdb_baseline.csv"
 
 MAX_LINES = 1000
 MAX_ABS_COEFF = 300         # keep coefficients (and discriminants) small
@@ -75,6 +80,20 @@ class Batch:
             comment += " poly_disc_primes=" + str(primes).replace(" ", "")
         self.lines.append(line + comment)
         return True
+
+    def exclude_baseline(self) -> int:
+        """Seed the dedup set with every LMFDB baseline polynomial so a known
+        field is never emitted as a discovery. Only new pairs can score."""
+        if not BASELINE_CSV.exists():
+            return 0
+        count = 0
+        with BASELINE_CSV.open(encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                c = [int(v) for v in row["coeffs"].split(",")]
+                if len(c) == 25:
+                    self.seen.add(self.key(c))
+                    count += 1
+        return count
 
     def full(self) -> bool:
         return len(self.lines) >= MAX_LINES
@@ -168,6 +187,8 @@ def add_trinomials(batch: Batch) -> None:
 
 def main() -> None:
     batch = Batch()
+    excluded = batch.exclude_baseline()
+    print(f"baseline entries excluded from search: {excluded}")
     add_cyclotomic(batch)
     add_compositions(batch)
     add_trinomials(batch)
