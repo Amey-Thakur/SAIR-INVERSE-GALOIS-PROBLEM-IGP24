@@ -44,7 +44,7 @@ def _items(data):
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        for key in ("items", "submissions", "pairs", "results"):
+        for key in ("items", "submissions", "pairs", "results", "labels"):
             if key in data:
                 return _items(data[key])
     return []
@@ -159,10 +159,39 @@ def labels():
     print(f"labels for {total} polynomials saved to {out.relative_to(ROOT)}")
 
 
+def progress():
+    """Full label progress: per label, the allowed signatures and, for each,
+    how many teams hold it. teamCount 0 pairs pay a full point to their
+    first finder; teamCount 1 pairs are crowding targets."""
+    items, cursor = [], None
+    while True:
+        params = {"limit": 1000, "includeEmpty": "true"}
+        if cursor:
+            params["cursor"] = cursor
+        resp = requests.get(f"{BASE}/labels/progress", headers=_headers(),
+                            params=params, timeout=120)
+        resp.raise_for_status()
+        body = _unwrap(resp.json())
+        page = _items(body)
+        items.extend(page)
+        cursor = (body.get("nextCursor") or body.get("cursor")) if isinstance(body, dict) else None
+        if not cursor or not page:
+            break
+    out = ROOT / "data" / "label_progress.json"
+    out.write_text(json.dumps(items), encoding="utf-8")
+    pairs0 = sum(1 for it in items for s in it.get("signatures", [])
+                 if s.get("teamCount") == 0)
+    pairs1 = sum(1 for it in items for s in it.get("signatures", [])
+                 if s.get("teamCount") == 1)
+    print(f"labels: {len(items)} | k=0 pairs: {pairs0} | k=1 pairs: {pairs1} "
+          f"| saved to {out.relative_to(ROOT)}")
+
+
 def main():
-    commands = {"remaining": remaining, "results": results, "labels": labels}
+    commands = {"remaining": remaining, "results": results, "labels": labels,
+                "progress": progress}
     if len(sys.argv) < 2 or sys.argv[1] not in (*commands, "submit"):
-        sys.exit(__doc__ or "usage: sair_api.py remaining|submit|results|labels")
+        sys.exit(__doc__ or "usage: sair_api.py remaining|submit|results|labels|progress")
     if sys.argv[1] == "submit":
         if len(sys.argv) < 3:
             sys.exit("submit needs at least one batch file")
