@@ -34,6 +34,32 @@ def _headers():
     return {"Authorization": f"Bearer {key}"}
 
 
+def _unwrap(payload):
+    """Peel the {"ok": true, "data": ...} envelope the API returns."""
+    return payload.get("data", payload) if isinstance(payload, dict) else payload
+
+
+def _items(data):
+    """Find the list of records inside a possibly nested response body."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for key in ("items", "submissions", "pairs", "results"):
+            if key in data:
+                return _items(data[key])
+    return []
+
+
+def _clean_line(raw):
+    """A submittable line: the 25 coefficients, keeping only a
+    poly_disc_primes hint from any trailing comment."""
+    coeffs = raw.split("#", 1)[0].strip()
+    if "poly_disc_primes=" in raw:
+        hint = "poly_disc_primes=" + raw.split("poly_disc_primes=", 1)[1].split()[0]
+        return f"{coeffs} # {hint}"
+    return coeffs
+
+
 def remaining():
     """Page through every unclaimed (24Tt, r) pair and save the list."""
     pairs, cursor = [], None
@@ -44,10 +70,10 @@ def remaining():
         resp = requests.get(f"{BASE}/remaining-pairs", headers=_headers(),
                             params=params, timeout=60)
         resp.raise_for_status()
-        data = resp.json()
-        page = data.get("items") or data.get("pairs") or data.get("data") or []
+        body = _unwrap(resp.json())
+        page = _items(body)
         pairs.extend(page)
-        cursor = data.get("nextCursor") or data.get("cursor")
+        cursor = (body.get("nextCursor") or body.get("cursor")) if isinstance(body, dict) else None
         if not cursor or not page:
             break
 
@@ -61,17 +87,21 @@ def submit(paths):
     against the daily cap, no matter how many polynomials it carries."""
     for path in paths:
         lines = [
-            s.strip() for s in Path(path).read_text(encoding="utf-8").splitlines()
+            _clean_line(s.strip())
+            for s in Path(path).read_text(encoding="utf-8").splitlines()
             if s.strip() and not s.strip().startswith("#")
         ]
         resp = requests.post(
             f"{BASE}/submissions", headers=_headers(),
-            json={"payload": {"polynomials": lines}}, timeout=120,
+            json={"payload": {"polynomials": lines}}, timeout=180,
         )
-        status = "ok" if resp.ok else f"HTTP {resp.status_code}"
-        print(f"{path}: {len(lines)} polynomials, {status}")
-        if not resp.ok:
-            print(" ", resp.text[:300])
+        if resp.ok:
+            body = _unwrap(resp.json())
+            sub_id = body.get("submissionId", "") if isinstance(body, dict) else ""
+            print(f"{path}: {len(lines)} polynomials submitted, id {sub_id}")
+        else:
+            print(f"{path}: HTTP {resp.status_code}")
+            print(" ", resp.text[:400])
             break
         time.sleep(2)   # be polite to the evaluator queue
 
@@ -80,11 +110,16 @@ def results():
     resp = requests.get(f"{BASE}/submissions/me", headers=_headers(),
                         params={"limit": 20}, timeout=60)
     resp.raise_for_status()
-    data = resp.json()
-    items = data.get("items") or data.get("submissions") or data.get("data") or []
+    items = _items(_unwrap(resp.json()))
+    if not items:
+        print("no submissions found")
+        return
     for item in items:
-        print(json.dumps(item, indent=1)[:400])
-        print("-" * 40)
+        ok = len(item.get("verifiedPolynomials", []) or [])
+        bad = len(item.get("failedPolynomials", []) or [])
+        queued = len((item.get("payload", {}) or {}).get("queuedPolynomials", []) or [])
+        print(f"{item.get('submissionId', '')}  created {item.get('createdAt', '')}")
+        print(f"  verified {ok}, failed {bad}, queued {queued}")
 
 
 def main():
