@@ -122,17 +122,53 @@ def results():
         print(f"  verified {ok}, failed {bad}, queued {queued}")
 
 
+def labels():
+    """Join the server's per-polynomial verification results (label, r,
+    scoreability, discriminant) back onto our submitted coefficient lines.
+    polynomialIndex follows submitted line order, so the local batch file
+    gives the coefficients the server does not echo. Output feeds the
+    factory's label-aware exclusions."""
+    mapping = json.loads((ROOT / "data" / "submissions_map.json").read_text())
+    out = ROOT / "data" / "labels.jsonl"
+    total = 0
+    with out.open("w", encoding="utf-8") as fh:
+        for sub_id, fname in mapping.items():
+            lines = [
+                s.split("#", 1)[0].strip()
+                for s in (ROOT / fname).read_text(encoding="utf-8").splitlines()
+                if s.strip() and not s.strip().startswith("#")
+            ]
+            resp = requests.get(f"{BASE}/submissions/{sub_id}",
+                                headers=_headers(), timeout=120)
+            resp.raise_for_status()
+            rows = _unwrap(resp.json()).get("verifiedPolynomials") or []
+            for row in rows:
+                idx = row.get("polynomialIndex")
+                if idx is None or idx >= len(lines):
+                    continue
+                fh.write(json.dumps({
+                    "coeffs": lines[idx],
+                    "label": row.get("label"),
+                    "t": row.get("t"),
+                    "r": row.get("r"),
+                    "scoreable": row.get("scoreable"),
+                    "inBaseline": row.get("inBaseline"),
+                    "fieldDiscAbs": row.get("fieldDiscAbs"),
+                }) + "\n")
+                total += 1
+    print(f"labels for {total} polynomials saved to {out.relative_to(ROOT)}")
+
+
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ("remaining", "submit", "results"):
-        sys.exit(__doc__ or "usage: sair_api.py remaining|submit|results")
-    if sys.argv[1] == "remaining":
-        remaining()
-    elif sys.argv[1] == "submit":
+    commands = {"remaining": remaining, "results": results, "labels": labels}
+    if len(sys.argv) < 2 or sys.argv[1] not in (*commands, "submit"):
+        sys.exit(__doc__ or "usage: sair_api.py remaining|submit|results|labels")
+    if sys.argv[1] == "submit":
         if len(sys.argv) < 3:
             sys.exit("submit needs at least one batch file")
         submit(sys.argv[2:])
     else:
-        results()
+        commands[sys.argv[1]]()
 
 
 if __name__ == "__main__":

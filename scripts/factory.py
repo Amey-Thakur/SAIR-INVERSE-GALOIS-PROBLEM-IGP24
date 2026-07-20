@@ -31,10 +31,10 @@ LEDGER = ROOT / "data" / "ledger.jsonl"
 BASELINE = ROOT / "data" / "lmfdb_baseline.csv"
 BATCH_DIR = ROOT / "batches"
 
-MAX_ABS_COEFF = 10 ** 14      # keeps lines short and discriminants sane
+MAX_ABS_COEFF = 10 ** 18      # keeps lines short and discriminants sane
 BATCH_LINES = 1000
 
-rng = random.Random(31415)    # seeded: every run is reproducible
+rng = random.Random(27182)    # seeded: every run is reproducible
 
 
 # -- integer polynomial arithmetic (coeffs ascending) ----------------------
@@ -61,8 +61,8 @@ def compose(outer: list[int], inner: list[int]) -> list[int]:
 
 def quadratic_links():
     out = []
-    for b in (0, 1, -1, 2, -2):
-        for c in (1, -1, 2, -2, 3, -3, 5, -5, 7, -7):
+    for b in (0, 1, -1, 2, -2, 3, -3):
+        for c in (1, -1, 2, -2, 3, -3, 5, -5, 6, -6, 7, -7, 10, -10, 11, -11):
             out.append([c, b, 1])
     return out
 
@@ -159,10 +159,15 @@ def engine_totally_real(count: int):
     import numpy as np
 
     # Degree 3 bases only: doubling reaches 24 from 3 (3, 6, 12, 24) but
-    # never from 2 (2, 4, 8, 16, 32). Both cubics are cyclic and totally real.
+    # never from 2 (2, 4, 8, 16, 32). The first two cubics are cyclic, the
+    # others have square-free positive discriminant (S3, still totally real),
+    # which seeds a different family of wreath towers.
     bases = [
-        [-1, -3, 0, 1],   # x^3 - 3x - 1
-        [1, -3, 0, 1],    # x^3 - 3x + 1
+        [-1, -3, 0, 1],   # x^3 - 3x - 1, disc 81
+        [1, -3, 0, 1],    # x^3 - 3x + 1, disc 81
+        [-1, -4, 0, 1],   # x^3 - 4x - 1, disc 229
+        [-2, -4, 0, 1],   # x^3 - 4x - 2, disc 148
+        [-1, -7, 0, 1],   # x^3 - 7x - 1, disc 1345
     ]
     made = 0
     while made < count:
@@ -175,7 +180,10 @@ def engine_totally_real(count: int):
                 ok = False
                 break
             floor_c = int(np.ceil(-reals.min())) + 1
-            c = floor_c + rng.choice((0, 0, 0, 1, 2, 4, -1, -2, -3))
+            # At or above the bar keeps r = 24; each dip below converts real
+            # pairs to complex ones, sweeping the r = 8..20 signatures where
+            # most unclaimed pairs live.
+            c = floor_c + rng.choice((0, 0, 0, 1, 2, 4, 6, -1, -1, -2, -2, -3, -4, -5))
             # q(x^2 - c): substitute the quadratic into the current stage.
             poly = compose(poly, [-c, 0, 1])
         if not ok or len(poly) - 1 != 24:
@@ -247,33 +255,73 @@ def seed_ledger_from_submission():
 
 # -- batch assembly --------------------------------------------------------
 
+def load_intelligence():
+    """Server feedback, when the API has been polled: the fingerprint to
+    label map from our verified submissions, the pairs we already hold, and
+    the pairs no team holds. Absent files degrade to pure exploration."""
+    key2label, owned, remaining = {}, set(), set()
+
+    labels_path = ROOT / "data" / "labels.jsonl"
+    if labels_path.exists():
+        coeff2key = {}
+        for raw in LEDGER.read_text(encoding="utf-8").splitlines():
+            if raw.strip():
+                rec = json.loads(raw)
+                coeff2key[rec["coeffs"]] = rec["key"]
+        for raw in labels_path.read_text(encoding="utf-8").splitlines():
+            rec = json.loads(raw)
+            owned.add((rec["t"], rec["r"]))
+            kh = coeff2key.get(rec["coeffs"])
+            if kh is not None:
+                key2label.setdefault(kh, rec["t"])
+
+    remaining_path = ROOT / "data" / "remaining_pairs.json"
+    if remaining_path.exists():
+        for p in json.loads(remaining_path.read_text(encoding="utf-8")):
+            remaining.add((p["t"], p["r"]))
+
+    return key2label, owned, remaining
+
+
+# Unclaimed-pair density by signature (from the last remaining-pairs pull);
+# exploration lines go where the empty territory is largest.
+R_WEIGHT = {16: 6, 24: 5, 20: 4, 12: 3, 8: 3, 0: 2, 4: 2,
+            6: 1, 14: 1, 18: 1, 10: 1, 2: 1, 22: 1}
+
+
 def build_batches(n_batches: int):
     seed_ledger_from_submission()
     baseline_fields = load_baseline_fields()
     ledger_fields, ledger_clusters = load_ledger()
+    key2label, owned, remaining = load_intelligence()
+    print(f"intelligence: {len(key2label)} fingerprint labels, "
+          f"{len(owned)} owned pairs, {len(remaining)} unclaimed pairs")
 
     plan = [
-        (engine_totally_real, 6000),
-        (engine_composita, 1500),
-        (engine_towers, 70000),
+        (engine_totally_real, 25000),
+        (engine_composita, 3000),
+        (engine_towers, 100000),
     ]
 
-    picked = []            # (coeffs, tag, keyhash, r)
+    targeted = []          # predicted label sits on an unclaimed pair
+    explore = []           # unknown fingerprint: could be anything
     picked_clusters = set(ledger_clusters)
+    claimed_this_run = set()
     seen_fields = set(baseline_fields) | ledger_fields
     target = n_batches * BATCH_LINES
     started = time.time()
-    stats = {"raw": 0, "irreducible": 0, "novel": 0}
+    stats = {"raw": 0, "irreducible": 0, "targeted": 0, "explore": 0, "skipped_known": 0}
 
     for engine, count in plan:
-        if len(picked) >= target:
+        if len(targeted) + len(explore) >= target * 2:
             break
         for coeffs, tag in engine(count):
             stats["raw"] += 1
-            if stats["raw"] % 5000 == 0:
-                print(f"  raw {stats['raw']}, kept {len(picked)}, "
-                      f"{time.time() - started:.0f}s", flush=True)
-            if len(picked) >= target:
+            if stats["raw"] % 10000 == 0:
+                print(f"  raw {stats['raw']}, targeted {len(targeted)}, "
+                      f"explore {len(explore)}, {time.time() - started:.0f}s",
+                      flush=True)
+            if len(targeted) + len(explore) >= target * 2:
                 break
             if any(abs(c) > MAX_ABS_COEFF for c in coeffs):
                 continue
@@ -289,20 +337,41 @@ def build_batches(n_batches: int):
             if (kh, r) in picked_clusters:
                 continue
             picked_clusters.add((kh, r))
-            stats["novel"] += 1
-            picked.append((coeffs, tag, kh, r))
 
-    # Rare signatures first: high r pairs have the least competition.
-    picked.sort(key=lambda item: -item[3])
+            label = key2label.get(kh)
+            if label is not None:
+                pair = (label, r)
+                if pair in owned or pair in claimed_this_run:
+                    continue
+                if pair in remaining:
+                    claimed_this_run.add(pair)
+                    stats["targeted"] += 1
+                    targeted.append((coeffs, tag, kh, r))
+                else:
+                    # Some other team holds it; a crowded pair is near
+                    # worthless, so the line is better spent elsewhere.
+                    stats["skipped_known"] += 1
+                continue
+            stats["explore"] += 1
+            explore.append((coeffs, tag, kh, r))
+
+    # Targeted pairs pay a full point each; they lead every batch. The
+    # exploration tail goes where unclaimed territory is densest.
+    explore.sort(key=lambda item: -R_WEIGHT.get(item[3], 1))
+    picked = targeted + explore
+    picked = picked[:target]
 
     BATCH_DIR.mkdir(exist_ok=True)
+    # Continue numbering after existing batches; never overwrite history.
+    existing = [int(p.stem.split("_")[-1]) for p in BATCH_DIR.glob("igp24_batch_*.txt")]
+    next_index = max(existing, default=0) + 1
     written = []
     with LEDGER.open("a", encoding="utf-8") as ledger:
         for b in range(n_batches):
             chunk = picked[b * BATCH_LINES:(b + 1) * BATCH_LINES]
             if not chunk:
                 break
-            name = f"igp24_batch_{b + 1:03d}.txt"
+            name = f"igp24_batch_{next_index + b:03d}.txt"
             path = BATCH_DIR / name
             with path.open("w", encoding="ascii", newline="\n") as out:
                 out.write("# IGP24 batch: one polynomial per distinct "
@@ -317,7 +386,8 @@ def build_batches(n_batches: int):
             written.append((name, len(chunk)))
 
     print(f"raw {stats['raw']}, irreducible {stats['irreducible']}, "
-          f"novel clusters {stats['novel']}")
+          f"targeted {stats['targeted']}, explore {stats['explore']}, "
+          f"skipped known crowded {stats['skipped_known']}")
     for name, count in written:
         print(f"wrote batches/{name}: {count} lines")
     print(f"total time {time.time() - started:.0f}s")
