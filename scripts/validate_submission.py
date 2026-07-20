@@ -29,7 +29,7 @@ def parse_coeffs(line: str) -> list[int]:
 
 
 def validate() -> int:
-    path = Path("submission.txt")
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("submission.txt")
     raw = path.read_bytes()
     if len(raw) > 1_000_000:
         print(f"FAIL: file is {len(raw)} bytes, over the 1,000,000 limit")

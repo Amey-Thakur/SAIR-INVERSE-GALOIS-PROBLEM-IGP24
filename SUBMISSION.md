@@ -71,3 +71,27 @@ Each team starts at 5 submissions per day. After 5 distinct scoreable
 `(24Tt, r)` pairs, the cap rises to 1,000 per day. Each upload is one
 submission regardless of how many polynomials it carries, so send the whole
 file at once.
+
+## Scaling to rare pairs: the batch factory
+
+The first submission (840 accepted) landed on pairs shared with 9 to 17
+other teams, which the scoring formula pays almost nothing for: at k teams a
+pair is worth 2^(1-k), so a crowded pair rounds to zero while an unclaimed
+pair pays a full point. The follow-up pipeline therefore optimizes diversity:
+
+```
+py scripts/factory.py --batches 10          # writes batches/igp24_batch_NNN.txt
+py scripts/validate_submission.py batches/igp24_batch_001.txt
+py scripts/sair_api.py submit batches/igp24_batch_001.txt ...   # or upload by hand
+py scripts/sair_api.py remaining            # unclaimed pairs, for the next run
+```
+
+`factory.py` generates tens of thousands of candidates from three engines
+(random tower chains, root-sum composita, totally real towers for the scarce
+high signature pairs), fingerprints each one's Galois group by its Frobenius
+cycle types mod 24 primes ([fingerprint.py](./scripts/fingerprint.py)), and
+keeps exactly one polynomial per distinct (fingerprint, signature) cluster.
+The ledger `data/ledger.jsonl` records every cluster ever submitted, so no
+future line re-covers a pair the team already holds. After the daily unlock
+the cap is 1,000 submissions per day, so throughput is limited only by
+generation and evaluator capacity.
