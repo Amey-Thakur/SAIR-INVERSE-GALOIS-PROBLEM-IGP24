@@ -282,31 +282,31 @@ def seed_ledger_from_submission():
 # -- batch assembly --------------------------------------------------------
 
 def load_intelligence():
-    """Server feedback, when the API has been polled: the fingerprint to
-    label map from our verified submissions, the pairs we already hold, and
-    the pairs no team holds. Absent files degrade to pure exploration."""
-    key2label, owned, remaining = {}, set(), set()
+    """Server truth for the targeted gate: the pairs we already hold, the
+    pairs nobody holds (a full point each), and the pairs exactly one other
+    team holds (a crowding target: about half a point gained and half a
+    point taken from the incumbent)."""
+    owned, tier0, tier1 = set(), set(), set()
 
     labels_path = ROOT / "data" / "labels.jsonl"
     if labels_path.exists():
-        coeff2key = {}
-        for raw in LEDGER.read_text(encoding="utf-8").splitlines():
-            if raw.strip():
-                rec = json.loads(raw)
-                coeff2key[rec["coeffs"]] = rec["key"]
         for raw in labels_path.read_text(encoding="utf-8").splitlines():
             rec = json.loads(raw)
             owned.add((rec["t"], rec["r"]))
-            kh = coeff2key.get(rec["coeffs"])
-            if kh is not None:
-                key2label.setdefault(kh, rec["t"])
 
-    remaining_path = ROOT / "data" / "remaining_pairs.json"
-    if remaining_path.exists():
-        for p in json.loads(remaining_path.read_text(encoding="utf-8")):
-            remaining.add((p["t"], p["r"]))
+    progress_path = ROOT / "data" / "label_progress.json"
+    if progress_path.exists():
+        for item in json.loads(progress_path.read_text(encoding="utf-8")):
+            t = item["t"]
+            for sig in item.get("signatures", []):
+                pair = (t, sig["r"])
+                k = sig.get("teamCount", 0)
+                if k == 0:
+                    tier0.add(pair)
+                elif k == 1 and pair not in owned:
+                    tier1.add(pair)
 
-    return key2label, owned, remaining
+    return owned, tier0, tier1
 
 
 # Unclaimed-pair density by signature (from the last remaining-pairs pull);
@@ -319,38 +319,49 @@ def build_batches(n_batches: int):
     seed_ledger_from_submission()
     baseline_fields = load_baseline_fields()
     ledger_fields, ledger_clusters = load_ledger()
-    key2label, owned, remaining = load_intelligence()
-    print(f"intelligence: {len(key2label)} fingerprint labels, "
-          f"{len(owned)} owned pairs, {len(remaining)} unclaimed pairs")
+    owned, tier0, tier1 = load_intelligence()
+    print(f"intelligence: {len(owned)} owned pairs, {len(tier0)} k=0 pairs, "
+          f"{len(tier1)} k=1 crowding targets")
+
+    predictor = None
+    if (ROOT / "data" / "group_profiles.jsonl").exists():
+        from predict_label import Predictor
+        predictor = Predictor()
+        print(f"predictor: {len(predictor.groups)} group profiles loaded")
 
     # Mix set by measured yield: composita find pairs at twice the tower
     # rate, and totally real towers own the signatures where most unclaimed
     # pairs sit; towers fill the tail.
     plan = [
         (engine_composita, 9000),
-        (engine_totally_real, 25000),
-        (engine_towers, 80000),
+        (engine_totally_real, 30000),
+        (engine_towers, 140000),
     ]
 
-    targeted = []          # predicted label sits on an unclaimed pair
-    explore = []           # unknown fingerprint: could be anything
+    hits0 = []             # predicted onto a pair no team holds: 1 point
+    hits1 = []             # predicted onto a lone team's pair: crowding
+    explore = []           # predictor abstained: could be anything
     picked_clusters = set(ledger_clusters)
     claimed_this_run = set()
     seen_fields = set(baseline_fields) | ledger_fields
     target = n_batches * BATCH_LINES
     started = time.time()
-    stats = {"raw": 0, "irreducible": 0, "targeted": 0, "explore": 0, "skipped_known": 0}
+    stats = {"raw": 0, "irreducible": 0, "tier0": 0, "tier1": 0,
+             "explore": 0, "skipped_crowded": 0}
+
+    def selected():
+        return len(hits0) + len(hits1) + len(explore)
 
     for engine, count in plan:
-        if len(targeted) + len(explore) >= target * 2:
+        if selected() >= target * 2:
             break
         for coeffs, tag in engine(count):
             stats["raw"] += 1
             if stats["raw"] % 10000 == 0:
-                print(f"  raw {stats['raw']}, targeted {len(targeted)}, "
-                      f"explore {len(explore)}, {time.time() - started:.0f}s",
-                      flush=True)
-            if len(targeted) + len(explore) >= target * 2:
+                print(f"  raw {stats['raw']}, tier0 {stats['tier0']}, "
+                      f"tier1 {stats['tier1']}, explore {stats['explore']}, "
+                      f"{time.time() - started:.0f}s", flush=True)
+            if selected() >= target * 2:
                 break
             if any(abs(c) > MAX_ABS_COEFF for c in coeffs):
                 continue
@@ -367,27 +378,32 @@ def build_batches(n_batches: int):
                 continue
             picked_clusters.add((kh, r))
 
-            label = key2label.get(kh)
-            if label is not None:
-                pair = (label, r)
-                if pair in owned or pair in claimed_this_run:
+            if predictor is not None:
+                label = predictor.confident(coeffs)
+                if label is not None:
+                    pair = (label, r)
+                    if pair in owned or pair in claimed_this_run:
+                        continue
+                    if pair in tier0:
+                        claimed_this_run.add(pair)
+                        stats["tier0"] += 1
+                        hits0.append((coeffs, f"{tag} t={label}", kh, r))
+                    elif pair in tier1:
+                        claimed_this_run.add(pair)
+                        stats["tier1"] += 1
+                        hits1.append((coeffs, f"{tag} t={label}", kh, r))
+                    else:
+                        # Confidently predicted onto a crowded pair: the
+                        # line is worth more spent anywhere else.
+                        stats["skipped_crowded"] += 1
                     continue
-                if pair in remaining:
-                    claimed_this_run.add(pair)
-                    stats["targeted"] += 1
-                    targeted.append((coeffs, tag, kh, r))
-                else:
-                    # Some other team holds it; a crowded pair is near
-                    # worthless, so the line is better spent elsewhere.
-                    stats["skipped_known"] += 1
-                continue
             stats["explore"] += 1
             explore.append((coeffs, tag, kh, r))
 
-    # Targeted pairs pay a full point each; they lead every batch. The
-    # exploration tail goes where unclaimed territory is densest.
+    # Full-point captures lead every batch, crowding attacks follow, and
+    # the abstained exploration tail goes where open territory is densest.
     explore.sort(key=lambda item: -R_WEIGHT.get(item[3], 1))
-    picked = targeted + explore
+    picked = hits0 + hits1 + explore
     picked = picked[:target]
 
     BATCH_DIR.mkdir(exist_ok=True)
@@ -415,8 +431,9 @@ def build_batches(n_batches: int):
             written.append((name, len(chunk)))
 
     print(f"raw {stats['raw']}, irreducible {stats['irreducible']}, "
-          f"targeted {stats['targeted']}, explore {stats['explore']}, "
-          f"skipped known crowded {stats['skipped_known']}")
+          f"tier0 {stats['tier0']}, tier1 {stats['tier1']}, "
+          f"explore {stats['explore']}, "
+          f"skipped crowded {stats['skipped_crowded']}")
     for name, count in written:
         print(f"wrote batches/{name}: {count} lines")
     print(f"total time {time.time() - started:.0f}s")
