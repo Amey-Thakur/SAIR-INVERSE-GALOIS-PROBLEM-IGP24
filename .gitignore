@@ -39,7 +39,7 @@ runs/
 
 # Data
 # data/ holds pipeline state (baseline, ledger, labels); it is tracked.
-*.jsonl
+# Pipeline state in data/*.jsonl is tracked; only scratch jsonl is ignored.
 
 # IDEs and Tools
 .vscode/
