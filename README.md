@@ -25,10 +25,11 @@ The Inverse Galois Problem over $\mathbb{Q}$ remains an open frontier. Degree 24
 
 ## Directory Architecture
 
-*   **[`submission.txt`](./submission.txt)**: The ready submission artifact, 840 verified degree 24 monic irreducible polynomials.
-*   **[`SUBMISSION.md`](./SUBMISSION.md)**: How the batch is built, checked, and sent to the evaluator.
-*   **[`scripts/`](./scripts/)**: The working pipeline: `generate_submission.py`, `validate_submission.py`, `build_api_payload.py`.
-*   **[`data/`](./data/)**: The frozen LMFDB baseline CSV used for exclusion and threshold comparison.
+*   **[`submission.txt`](./submission.txt)**: The first submission artifact, 840 accepted degree 24 monic irreducible polynomials.
+*   **[`batches/`](./batches/)**: Factory output, one file per follow-up submission, each line a distinct (group fingerprint, signature) cluster.
+*   **[`SUBMISSION.md`](./SUBMISSION.md)**: How batches are built, checked, and sent, and why diversity is the scoring lever.
+*   **[`scripts/`](./scripts/)**: The pipeline: `factory.py` (diverse batch generation), `fingerprint.py` (Frobenius cycle-type group fingerprints), `sair_api.py` (remaining pairs, submit, results), `generate_submission.py`, `validate_submission.py`, `build_api_payload.py`.
+*   **[`data/`](./data/)**: The frozen LMFDB baseline CSV plus `ledger.jsonl`, the record of every cluster already submitted.
 *   **[`docs/`](./docs/)**: Competition mechanics, mathematical background, and strategy literature.
 *   **[`src/datasets/`](./src/datasets/)**: Baseline loader over `data/lmfdb_baseline.csv` (pairs and thresholds).
 *   **[`src/evaluation/`](./src/evaluation/)**: PARI/GP wrapper for exact and mixed discriminants.
