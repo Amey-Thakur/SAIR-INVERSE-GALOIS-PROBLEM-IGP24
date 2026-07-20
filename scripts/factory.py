@@ -34,7 +34,7 @@ BATCH_DIR = ROOT / "batches"
 MAX_ABS_COEFF = 10 ** 18      # keeps lines short and discriminants sane
 BATCH_LINES = 1000
 
-rng = random.Random(27182)    # seeded: every run is reproducible
+rng = random.Random(16180)    # seeded: every run is reproducible
 
 
 # -- integer polynomial arithmetic (coeffs ascending) ----------------------
@@ -120,21 +120,46 @@ def engine_towers(count: int):
 
 
 def engine_composita(count: int):
-    """Minimal polynomials of root sums: subdirect products, a family the
-    tower engine cannot reach. Res_y(f(y), g(x - y)) via SymPy."""
+    """Minimal polynomials of root sums and root products, including mixes
+    with cyclotomic factors: subdirect products and abelian-twisted fields
+    that neither towers nor trinomials reach. This family finds new pairs
+    at twice the rate of towers, so it earns the resultant cost."""
     import sympy as sp
+    from sympy import cyclotomic_poly
 
     x, y = sp.symbols("x y")
+
+    # Cyclotomic polynomials grouped by degree, ascending coefficients.
+    cyclo = {}
+    for n in range(3, 40):
+        c = [int(v) for v in reversed(sp.Poly(cyclotomic_poly(n, x), x).all_coeffs())]
+        cyclo.setdefault(len(c) - 1, []).append(c)
+
+    def pool(deg):
+        # Half draws from the plain link pool, half from cyclotomics when
+        # available: the abelian components steer into new group families.
+        if deg in cyclo and rng.random() < 0.5:
+            return rng.choice(cyclo[deg])
+        return rng.choice(LINKS[deg])
+
+    pairs = [(2, 12), (3, 8), (4, 6), (6, 4), (8, 3), (12, 2)]
     made = 0
     attempts = 0
-    pairs = [(2, 12), (3, 8), (4, 6), (6, 4)]
     while made < count and attempts < count * 8:
         attempts += 1
         da, db = rng.choice(pairs)
-        f = rng.choice(LINKS[da])
-        g = rng.choice(LINKS[db])
+        f = pool(da)
+        g = pool(db)
         fy = sum(c * y ** i for i, c in enumerate(f))
-        gxy = sum(c * (x - y) ** i for i, c in enumerate(g))
+        if rng.random() < 0.5:
+            # Sum of roots: Res_y(f(y), g(x - y)).
+            gxy = sum(c * (x - y) ** i for i, c in enumerate(g))
+            kind = "sum"
+        else:
+            # Product of roots: Res_y(f(y), y^db g(x/y)), homogenized so it
+            # stays polynomial. Nonzero constant terms keep roots nonzero.
+            gxy = sum(c * x ** i * y ** (db - i) for i, c in enumerate(g))
+            kind = "prod"
         try:
             res = sp.Poly(sp.resultant(fy, gxy, y), x)
         except Exception:
@@ -143,11 +168,12 @@ def engine_composita(count: int):
             continue
         coeffs = [int(v) for v in reversed(res.all_coeffs())]
         lead = coeffs[24]
-        if lead in (1, -1):
-            if lead == -1:
-                coeffs = [-c for c in coeffs]
-            made += 1
-            yield coeffs, f"compositum_{da}+{db}"
+        if lead == -1:
+            coeffs = [-c for c in coeffs]
+        elif lead != 1:
+            continue
+        made += 1
+        yield coeffs, f"compositum_{kind}_{da}+{db}"
 
 
 def engine_totally_real(count: int):
@@ -297,10 +323,13 @@ def build_batches(n_batches: int):
     print(f"intelligence: {len(key2label)} fingerprint labels, "
           f"{len(owned)} owned pairs, {len(remaining)} unclaimed pairs")
 
+    # Mix set by measured yield: composita find pairs at twice the tower
+    # rate, and totally real towers own the signatures where most unclaimed
+    # pairs sit; towers fill the tail.
     plan = [
+        (engine_composita, 9000),
         (engine_totally_real, 25000),
-        (engine_composita, 3000),
-        (engine_towers, 100000),
+        (engine_towers, 80000),
     ]
 
     targeted = []          # predicted label sits on an unclaimed pair
