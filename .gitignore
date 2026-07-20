@@ -38,7 +38,7 @@ MANIFEST
 runs/
 
 # Data
-data/
+# data/ holds pipeline state (baseline, ledger, labels); it is tracked.
 *.jsonl
 
 # IDEs and Tools
