@@ -77,7 +77,8 @@ class Base:
             self.pows[k] = mat_mul(self.pows[k - 1], comp)
         roots = np.roots(list(reversed(coeffs)))
         real = sorted(float(z.real) for z in roots if abs(z.imag) < 1e-9)
-        self.emb = np.array([[y ** k for k in range(n)] for y in real])
+        self.emb = (np.array([[y ** k for k in range(n)] for y in real],
+                             dtype=float) if real else np.zeros((0, n)))
         self.r1 = len(real)
 
     def theta_at(self, c):
@@ -86,6 +87,15 @@ class Base:
 
 def theta_for_j(base, j):
     """Sample theta positive at exactly j real embeddings of the base."""
+    if base.r1 == 0:
+        # A totally complex base has no real embeddings, so every element
+        # gives a degree-24 field with r = 0; only j = 0 is reachable.
+        if j != 0:
+            return None
+        c = [0] * 12
+        c[rng.randint(1, 11)] = rng.choice([-3, -2, -1, 1, 2, 3])
+        c[0] = rng.choice([-2, -1, 1, 2])
+        return c
     for _ in range(30):
         c = [0] * 12
         for pos in rng.sample(range(1, 12), rng.randint(1, 4)):

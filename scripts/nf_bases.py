@@ -50,17 +50,23 @@ def main():
             label = f"12T{t}"
             if label in done:
                 continue
-            rows = fetch(f"degree=12&galois_label={label}&r2=0")
-            if not rows:
-                rows = fetch(f"degree=12&galois_label={label}")
-            if rows is None:
-                print(f"{label}: unreachable, skipped", flush=True)
-                continue
-            fh.write(json.dumps({
-                "label": label,
-                "fields": [{"coeffs": r["coeffs"], "r2": r["r2"],
-                            "disc_abs": r.get("disc_abs")} for r in rows[:100]],
-            }) + "\n")
+            # Two pulls per group: totally real fields (largest discs, never
+            # surfaced by a plain disc sort) and the smallest-disc fields of
+            # any signature. Together they give the relative engine bases of
+            # the same group at different complex place counts, which is what
+            # moves a label to a different signature.
+            real_rows = fetch(f"degree=12&galois_label={label}&r2=0") or []
+            any_rows = fetch(f"degree=12&galois_label={label}") or []
+            seen_c, fields = set(), []
+            for r in real_rows[:50] + any_rows[:80]:
+                key = tuple(r["coeffs"])
+                if key not in seen_c:
+                    seen_c.add(key)
+                    fields.append({"coeffs": r["coeffs"], "r2": r["r2"],
+                                   "disc_abs": r.get("disc_abs")})
+            if not fields:
+                print(f"{label}: no fields", flush=True)
+            fh.write(json.dumps({"label": label, "fields": fields}) + "\n")
             fh.flush()
             done.add(label)
             if t % 25 == 0:
