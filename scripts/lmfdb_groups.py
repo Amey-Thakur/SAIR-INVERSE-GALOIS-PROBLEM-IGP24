@@ -39,7 +39,9 @@ def main():
     OUT.parent.mkdir(exist_ok=True)
 
     with OUT.open("a", encoding="utf-8") as fh:
-        offset = 0
+        # Rows arrive in t order, so the resume point is simply how many we
+        # already hold, rounded down to a page boundary.
+        offset = (len(done) // PAGE) * PAGE
         while offset < 25000:
             # The API rejects percent-encoded commas in _fields, so the
             # query string is built by hand. curl is used instead of requests
