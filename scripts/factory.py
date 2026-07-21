@@ -119,61 +119,145 @@ def engine_towers(count: int):
         yield poly, "tower_" + "x".join(map(str, shape))
 
 
-def engine_composita(count: int):
-    """Minimal polynomials of root sums and root products, including mixes
-    with cyclotomic factors: subdirect products and abelian-twisted fields
-    that neither towers nor trinomials reach. This family finds new pairs
-    at twice the rate of towers, so it earns the resultant cost."""
+def engine_compose(count: int):
+    """Two-factor compositions f(g(x)) with a structured outer polynomial:
+    a cyclotomic or small-group f keeps the block action non-generic, which
+    lands these in the mid-index zone more often than a random tower."""
     import sympy as sp
     from sympy import cyclotomic_poly
 
-    x, y = sp.symbols("x y")
-
-    # Cyclotomic polynomials grouped by degree, ascending coefficients.
-    cyclo = {}
-    for n in range(3, 40):
+    x = sp.symbols("x")
+    outers = {}
+    for deg in (2, 3, 4, 6):
+        outers[deg] = [list(link) for link in LINKS[deg]]
+    for n in range(3, 20):
         c = [int(v) for v in reversed(sp.Poly(cyclotomic_poly(n, x), x).all_coeffs())]
-        cyclo.setdefault(len(c) - 1, []).append(c)
+        if len(c) - 1 in outers:
+            outers[len(c) - 1].append(c)
 
-    def pool(deg):
-        # Half draws from the plain link pool, half from cyclotomics when
-        # available: the abelian components steer into new group families.
-        if deg in cyclo and rng.random() < 0.5:
-            return rng.choice(cyclo[deg])
-        return rng.choice(LINKS[deg])
+    for _ in range(count):
+        m, k = rng.choice([(2, 12), (3, 8), (4, 6), (6, 4)])
+        f = rng.choice(outers[m])
+        inner = [0] * (k + 1)
+        inner[k] = 1
+        inner[0] = rng.choice([c for c in range(-6, 7) if c])
+        if rng.random() < 0.5:
+            inner[rng.randrange(1, k)] += rng.choice((1, -1, 2, -2))
+        poly = compose(f, inner)
+        if len(poly) == 25 and poly[0] != 0:
+            yield poly, f"compose_{m}x{k}"
 
+
+def _small_field_pool():
+    """Small monic irreducible base polynomials by degree, mixing the link
+    pool with cyclotomic and structured pieces. Cyclotomic and other
+    small-group components are what steer composita into the structured
+    mid-index solvable groups that carry the unclaimed pairs."""
+    import sympy as sp
+    from sympy import cyclotomic_poly
+
+    x = sp.symbols("x")
+    pool = {d: [list(link) for link in LINKS[d]] for d in LINKS}
+    for n in range(3, 60):
+        c = [int(v) for v in reversed(sp.Poly(cyclotomic_poly(n, x), x).all_coeffs())]
+        d = len(c) - 1
+        if d in pool:
+            pool[d].append(c)
+    # A few named structured cubics and quartics with small Galois groups.
+    pool[3] += [[-1, -3, 0, 1], [1, -3, 0, 1], [-1, -4, 0, 1], [1, 0, -1, 1]]
+    pool[4] += [[1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [-1, 0, -1, 0, 1], [4, 0, 1, 0, 1]]
+    pool[2] += [[-2, 0, 1], [-3, 0, 1], [-5, 0, 1], [-6, 0, 1], [2, 2, 1]]
+    return pool
+
+
+def _resultant_sum(f, g, mult=1):
+    """Minimal polynomial of alpha + mult*beta, alpha a root of f, beta of g,
+    via Res_y(f(y), g((x - y)/mult)) cleared of denominators."""
+    import sympy as sp
+    x, y = sp.symbols("x y")
+    db = len(g) - 1
+    fy = sum(c * y ** i for i, c in enumerate(f))
+    gxy = sum(c * (x - y) ** i * mult ** (db - i) for i, c in enumerate(g))
+    return sp.Poly(sp.resultant(fy, gxy, y), x)
+
+
+def _resultant_prod(f, g):
+    """Minimal polynomial of alpha * beta via the homogenized resultant."""
+    import sympy as sp
+    x, y = sp.symbols("x y")
+    db = len(g) - 1
+    fy = sum(c * y ** i for i, c in enumerate(f))
+    gxy = sum(c * x ** i * y ** (db - i) for i, c in enumerate(g))
+    return sp.Poly(sp.resultant(fy, gxy, y), x)
+
+
+def _monic_int(poly):
+    """Return ascending integer coefficients of a degree 24 monic result, or
+    None if the polynomial is not usable."""
+    if poly is None or poly.degree() != 24:
+        return None
+    coeffs = [int(v) for v in reversed(poly.all_coeffs())]
+    lead = coeffs[24]
+    if lead == -1:
+        coeffs = [-c for c in coeffs]
+    elif lead != 1:
+        return None
+    return coeffs if coeffs[0] != 0 else None
+
+
+def engine_composita(count: int):
+    """Root-sum and root-product fields, in pairs and triples, with scaled
+    combinations. This family reaches the structured mid-index solvable
+    groups at roughly a 57 percent rate against 1.6 percent for towers, so
+    it is now the primary engine. Triples and scalings multiply the reach
+    into groups no pair compositum lands on."""
+    pool = _small_field_pool()
     pairs = [(2, 12), (3, 8), (4, 6), (6, 4), (8, 3), (12, 2)]
+    triples = [(2, 2, 6), (2, 3, 4), (2, 6, 2), (3, 2, 4), (4, 3, 2),
+               (2, 2, 2, 3), (2, 4, 3), (6, 2, 2), (4, 2, 3), (3, 4, 2)]
+
     made = 0
     attempts = 0
-    while made < count and attempts < count * 8:
+    while made < count and attempts < count * 10:
         attempts += 1
-        da, db = rng.choice(pairs)
-        f = pool(da)
-        g = pool(db)
-        fy = sum(c * y ** i for i, c in enumerate(f))
-        if rng.random() < 0.5:
-            # Sum of roots: Res_y(f(y), g(x - y)).
-            gxy = sum(c * (x - y) ** i for i, c in enumerate(g))
-            kind = "sum"
-        else:
-            # Product of roots: Res_y(f(y), y^db g(x/y)), homogenized so it
-            # stays polynomial. Nonzero constant terms keep roots nonzero.
-            gxy = sum(c * x ** i * y ** (db - i) for i, c in enumerate(g))
-            kind = "prod"
+        roll = rng.random()
         try:
-            res = sp.Poly(sp.resultant(fy, gxy, y), x)
+            if roll < 0.45:
+                da, db = rng.choice(pairs)
+                f, g = rng.choice(pool[da]), rng.choice(pool[db])
+                if rng.random() < 0.5:
+                    mult = rng.choice((1, 1, 2, 3))
+                    coeffs = _monic_int(_resultant_sum(f, g, mult))
+                    kind = f"sum{mult}_{da}+{db}"
+                else:
+                    coeffs = _monic_int(_resultant_prod(f, g))
+                    kind = f"prod_{da}x{db}"
+            else:
+                shape = rng.choice(triples)
+                # Fold roots left to right: build the running sum field, then
+                # add the next root, keeping only degree-24 endpoints.
+                degs = list(shape)
+                acc = rng.choice(pool[degs[0]])
+                good = True
+                for d in degs[1:]:
+                    nxt = rng.choice(pool[d])
+                    mult = rng.choice((1, 1, 2))
+                    poly = _resultant_sum(acc, nxt, mult)
+                    acc = [int(v) for v in reversed(poly.all_coeffs())]
+                    if len(acc) - 1 > 24:
+                        good = False
+                        break
+                if not good:
+                    continue
+                import sympy as sp
+                coeffs = _monic_int(sp.Poly(list(reversed(acc)), sp.symbols("x")))
+                kind = "tri_" + "x".join(map(str, shape))
         except Exception:
             continue
-        if res.degree() != 24:
-            continue
-        coeffs = [int(v) for v in reversed(res.all_coeffs())]
-        lead = coeffs[24]
-        if lead == -1:
-            coeffs = [-c for c in coeffs]
-        elif lead != 1:
+        if coeffs is None:
             continue
         made += 1
-        yield coeffs, f"compositum_{kind}_{da}+{db}"
+        yield coeffs, f"compositum_{kind}"
 
 
 def engine_totally_real(count: int):
@@ -323,19 +407,30 @@ def build_batches(n_batches: int):
     print(f"intelligence: {len(owned)} owned pairs, {len(tier0)} k=0 pairs, "
           f"{len(tier1)} k=1 crowding targets")
 
+    # The predictor only earns its cost and its trust once nearly every
+    # group is profiled: at partial coverage the true group is often absent
+    # from the candidate set, so a confident match is confidently wrong.
     predictor = None
-    if (ROOT / "data" / "group_profiles.jsonl").exists():
+    profiles = ROOT / "data" / "group_profiles.jsonl"
+    profile_count = sum(1 for _ in profiles.open()) if profiles.exists() else 0
+    if profile_count >= 24000:
         from predict_label import Predictor
         predictor = Predictor()
-        print(f"predictor: {len(predictor.groups)} group profiles loaded")
+        print(f"predictor: {len(predictor.groups)} group profiles loaded, gate ON")
+    else:
+        print(f"predictor: {profile_count} profiles (< 24000), gate OFF, "
+              f"pure construction diversity")
 
-    # Mix set by measured yield: composita find pairs at twice the tower
-    # rate, and totally real towers own the signatures where most unclaimed
-    # pairs sit; towers fill the tail.
+    # Measured target-zone hit rates (t <= 12000, where the unclaimed pairs
+    # live): compositum 57 percent, compose 15 percent, tower 1.6 percent.
+    # The plan follows the evidence: composita lead, towers are a thin tail
+    # kept only for the high-index unclaimed signatures they occasionally
+    # reach.
     plan = [
-        (engine_composita, 9000),
-        (engine_totally_real, 30000),
-        (engine_towers, 140000),
+        (engine_composita, 60000),
+        (engine_compose, 20000),
+        (engine_totally_real, 20000),
+        (engine_towers, 30000),
     ]
 
     hits0 = []             # predicted onto a pair no team holds: 1 point
