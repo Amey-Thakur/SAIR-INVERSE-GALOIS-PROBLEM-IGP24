@@ -4,8 +4,9 @@
 #   official evaluator does and re-checking every constraint from scratch:
 #   exactly 25 integer coefficients before any trailing comment, monic, nonzero
 #   constant term, coefficient gcd 1, irreducible over Q, no duplicate field,
-#   valid poly_disc_primes hints, and the 1,000,000 byte ceiling. Nothing here
-#   trusts the generator; a line ships only if this file re-derives it as valid.
+#   valid poly_disc_primes hints, the 1,000 line ceiling, and the 1,000,000
+#   byte ceiling. Nothing here trusts the generator; a line ships only if this
+#   file re-derives it as valid.
 # Tech Stack: Python 3.10+, SymPy
 # ==============================================================================
 
@@ -22,17 +23,31 @@ import sympy as sp
 x = sp.symbols("x")
 PRIMES_RE = re.compile(r"poly_disc_primes=\[([0-9,]*)\]")
 
+# Ceilings the evaluator enforces. Re-derived here rather than imported from the
+# generator, because the point of this file is to not trust the generator.
+MAX_LINES = 1000
+MAX_BYTES = 1_000_000
 
-def parse_coeffs(line: str) -> list[int]:
+
+def parse_coeffs(line: str) -> list[int] | None:
+    """Coefficients on a data line, or None if the line is not parseable.
+
+    Returns rather than raises so a malformed line is reported as a FAIL with
+    its line number, the same as every other violation. A traceback out of the
+    gate reads like the gate broke rather than like the file did.
+    """
     body = line.split("#", 1)[0].strip()
-    return [int(p) for p in body.split(",")]
+    try:
+        return [int(p) for p in body.split(",")]
+    except ValueError:
+        return None
 
 
 def validate() -> int:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("submission.txt")
     raw = path.read_bytes()
-    if len(raw) > 1_000_000:
-        print(f"FAIL: file is {len(raw)} bytes, over the 1,000,000 limit")
+    if len(raw) > MAX_BYTES:
+        print(f"FAIL: file is {len(raw)} bytes, over the {MAX_BYTES:,} limit")
         return 1
 
     lines = path.read_text(encoding="ascii").splitlines()
@@ -45,8 +60,14 @@ def validate() -> int:
         if not s or s.startswith("#"):
             continue
         data += 1
+        if data > MAX_LINES:
+            print(f"FAIL line {i}: more than {MAX_LINES} polynomial lines")
+            return 1
 
         c = parse_coeffs(s)
+        if c is None:
+            print(f"FAIL line {i}: coefficients are not all integers")
+            return 1
         if len(c) != 25:
             print(f"FAIL line {i}: {len(c)} coefficients, need 25")
             return 1
