@@ -145,7 +145,7 @@ def main(base_degree, minutes=120.0, nb=120):
     rows = []
     bases = []
     for g in groups:
-        for fld in g["fields"][:4]:
+        for fld in g["fields"][:12]:
             bases.append((g["label"], fld["coeffs"]))
     print(f"bases: {len(bases)}", flush=True)
 
