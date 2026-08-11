@@ -1,6 +1,6 @@
 # SAIR Inverse Galois Problem Challenge (IGP24)
 
-![SAIR IGP24 Challenge](./social_preview.png)
+![SAIR IGP24 Challenge](./.github/social-preview.png)
 
 **Prepared by**: [Amey Thakur](https://github.com/Amey-Thakur)
 
