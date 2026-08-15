@@ -1,8 +1,8 @@
 <div align="center">
 
-<br>
+<a href="https://competition.sair.foundation/competitions/igp24/overview" title="SAIR Foundation, open the competition"><img src=".github/assets/sair-mark.png" alt="SAIR Foundation mark, links to the competition" width="76"></a>
 
-# SAIR Inverse Galois Problem (IGP24)
+# Inverse Galois Problem (IGP24)
 
 **Twenty-five thousand groups, and a search for polynomials that realise them.**
 
