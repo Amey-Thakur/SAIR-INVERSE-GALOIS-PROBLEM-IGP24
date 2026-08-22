@@ -82,29 +82,33 @@ def panel(d, box, active=False):
 def head(im, d, title, sub):
     mark = Image.open(MARK).convert("RGBA").resize((54, 54), Image.LANCZOS)
     im.paste(mark, (M, 28), mark)
-    d.text((M + 68, 34), "SAIR", font=f(SEMI, 25), fill=INK)
-    d.text((M + 68, 63), "Foundation for Science and AI Research", font=f(UI, 13), fill=DIM)
-    d.text((M, 104), title, font=f(SEMI, 38), fill=INK)
-    d.text((M + 2, 152), sub, font=f(UI, 18), fill=ROSE)
-    d.line([M, 186, W - M, 186], fill=EDGE)
+    d.text((M + 68, 34), "SAIR", font=f(SEMI, 27), fill=INK)
+    d.text((M + 68, 63), "Foundation for Science and AI Research", font=f(UI, 15), fill=DIM)
+    d.text((M, 100), title, font=f(SEMI, 46), fill=INK)
+    d.text((M + 2, 158), sub, font=f(UI, 21), fill=ROSE)
+    d.line([M, 196, W - M, 196], fill=EDGE)
 
 
 def stats(d, y, cells):
+    """A rule, then evenly spaced figure over label. Occupies 96px."""
     d.line([M, y, W - M, y], fill=EDGE)
     span = (W - 2 * M) / len(cells)
     for i, (big, small) in enumerate(cells):
         x = M + span * i
-        d.text((x, y + 16), big, font=f(SEMI, 26), fill=INK)
-        d.text((x + 2, y + 50), small, font=f(UI, 13), fill=DIM)
+        d.text((x, y + 20), big, font=f(SEMI, 34), fill=INK)
+        d.text((x + 2, y + 66), small, font=f(UI, 16), fill=DIM)
 
 
-def foot(d, competition, repo):
-    """Name on the left, what this is and where it lives on the right."""
-    d.line([M, H - 66, W - M, H - 66], fill=EDGE)
-    d.text((M, H - 46), "Amey Thakur", font=f(SEMI, 19), fill=INK)
-    for txt, fnt, col, dy in ((competition, f(UI, 14), PALE, -49),
-                              (repo, f(MONO, 13), ROSE, -27)):
-        d.text((W - M - d.textlength(txt, font=fnt), H + dy), txt, font=fnt, fill=col)
+def foot(d, competition):
+    """One line, three zones: who made it, what it is, where to find more."""
+    d.line([M, H - 58, W - M, H - 58], fill=EDGE)
+    y = H - 38
+    d.text((M, y), "Amey Thakur", font=f(SEMI, 18), fill=INK)
+    cw = d.textlength(competition, font=f(UI, 15))
+    d.text(((W - cw) / 2, y + 1), competition, font=f(UI, 17), fill=PALE)
+    link = "github.com/Amey-Thakur"
+    d.text((W - M - d.textlength(link, font=f(MONO, 15)), y + 2), link,
+           font=f(MONO, 15), fill=ROSE)
 
 
 def pipeline(d, t, boxes):
@@ -112,8 +116,8 @@ def pipeline(d, t, boxes):
     for k, (a, b) in enumerate(boxes):
         on = k <= (t * 3) % 3 < k + 1
         panel(d, [x, 214, x + wbox, 320], active=on)
-        d.text((x + 20, 240), a, font=f(MONO, 17), fill=INK if on else PALE)
-        d.text((x + 20, 274), b, font=f(UI, 13), fill=ROSE if on else DIM)
+        d.text((x + 20, 240), a, font=f(MONO, 20), fill=INK if on else PALE)
+        d.text((x + 20, 274), b, font=f(UI, 15), fill=ROSE if on else DIM)
         if k < 2:
             prog = max(0.0, min(1.0, ((t * 3) % 3 - k) * 2))
             d.line([x + wbox + 6, 267, x + wbox + 46, 267], fill=EDGE, width=2)
@@ -159,12 +163,11 @@ def igp24(i):
     lbl = "25,000 transitive groups"
     d.text((ox - d.textlength(lbl, font=f(UI, 14)) / 2, oy + 98), lbl, font=f(UI, 14), fill=DIM)
 
-    stats(d, 424, [("54 of 256", "final rank"), ("2.3559", "score"),
+    stats(d, 418, [("54 of 256", "final rank"), ("2.3559", "score"),
                    ("10,180", "scoreable pairs"), ("155,366", "pairs already claimed")])
-    d.text((M, 534), "Scoring falls off exponentially with how many teams hold a pair.",
+    d.text((M, 544), "Scoring falls off exponentially with how many teams hold a pair.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Inverse Galois Problem (IGP24)",
-         "github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24")
+    foot(d, "Inverse Galois Problem (IGP24)")
     return im
 
 
@@ -173,46 +176,49 @@ def modular(i):
     im = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(im)
     head(im, d, "Modular Arithmetic",
-         "Can a network learn exact (a \u00d7 b) mod p, rather than approximate it?")
+         "Can a network learn exact (a × b) mod p, rather than approximate it?")
 
-    def wrap(n, per=30):
-        s = str(n)
-        return [s[k:k + per] for k in range(0, len(s), per)]
+    def show(n, keep=20):
+        return str(n)[:keep] + "…"
 
-    y = 206
+    y = 232
     for lab, val in (("a", MA), ("b", MB), ("p", MP)):
-        d.text((M, y + 4), f"{lab} =", font=f(MONO, 16), fill=ROSE)
-        for k, ln in enumerate(wrap(val)):
-            d.text((M + 48, y + k * 21), ln, font=f(MONO, 16), fill=INK if k == 0 else DIM)
-        y += 62
+        d.text((M, y), f"{lab} =", font=f(MONO, 22), fill=ROSE)
+        d.text((M + 60, y), show(val), font=f(MONO, 22), fill=INK)
+        y += 52
 
-    ox = 566
-    layers = [(ox, [290, 356]), (ox + 92, [256, 322, 388]), (ox + 184, [290, 356])]
-    for (x1, ys1), (x2, ys2) in zip(layers, layers[1:]):
+    # three layers, with a pulse travelling left to right
+    ox, mid = 448, 302
+    layers = [(ox, [mid - 66, mid, mid + 66]),
+              (ox + 118, [mid - 99, mid - 33, mid + 33, mid + 99]),
+              (ox + 236, [mid - 66, mid, mid + 66])]
+    pulse = (t * 1.5) % 1.0
+    for li, ((x1, ys1), (x2, ys2)) in enumerate(zip(layers, layers[1:])):
+        lit = li / 2.0 <= pulse < li / 2.0 + 0.5
         for y1 in ys1:
             for y2 in ys2:
-                ph = (math.sin(t * math.pi * 2 + (y1 + y2) * 0.03) + 1) / 2
-                d.line([x1, y1, x2, y2], fill=(0x5A + int(0x40 * ph), 0x28, 0x48), width=1)
-    for x, ys in layers:
+                d.line([x1, y1, x2, y2], fill=ROSE if lit else EDGE, width=2 if lit else 1)
+    for li, (x, ys) in enumerate(layers):
+        on = abs(pulse - li * 0.4) < 0.18
         for yy in ys:
-            d.ellipse([x - 11, yy - 11, x + 11, yy + 11], fill=BG, outline=INK, width=2)
+            d.ellipse([x - 16, yy - 16, x + 16, yy + 16],
+                      fill=ROSE if on else BG, outline=INK, width=2)
 
-    panel(d, [820, 208, W - M, 398], active=True)
-    d.text((840, 224), "r = (a \u00d7 b) mod p", font=f(MONO, 15), fill=DIM)
+    panel(d, [768, 216, W - M, 402], active=True)
+    d.text((792, 234), "r = (a × b) mod p", font=f(MONO, 18), fill=DIM)
     res = str(MR)
     known = int(len(res) * min(1.0, t * 1.5))
     for k in range(0, len(res), 20):
-        chunk = "".join(res[j] if j < known else "\u00b7"
+        chunk = "".join(res[j] if j < known else "·"
                         for j in range(k, min(k + 20, len(res))))
-        d.text((840, 258 + (k // 20) * 26), chunk, font=f(MONO, 17), fill=INK)
-    d.text((840, 356), "exact match, or nothing", font=f(UI, 14), fill=ROSE)
+        d.text((792, 274 + (k // 20) * 32), chunk, font=f(MONO, 21), fill=INK)
+    d.text((792, 368), "exact match, or nothing", font=f(UI, 16), fill=ROSE)
 
-    stats(d, 424, [("60 digits", "each operand"), ("prime", "the modulus p"),
+    stats(d, 428, [("60 digits", "each operand"), ("prime", "the modulus p"),
                    ("130", "teams"), ("exact", "the only passing answer")])
-    d.text((M, 534), "Everything arrives as decimal strings, far beyond a 64-bit integer.",
-           font=f(UI, 16), fill=ROSE)
-    foot(d, "Modular Arithmetic Challenge",
-         "github.com/Amey-Thakur/SAIR-MODULAR-ARITHMETIC-CHALLENGE")
+    d.text((M, 544), "Everything arrives as decimal strings, far beyond any 64-bit integer.",
+           font=f(UI, 17), fill=ROSE)
+    foot(d, "Modular Arithmetic Challenge")
     return im
 
 
@@ -230,14 +236,13 @@ def stage1(i):
     d.rounded_rectangle([M, 374, W - M, 396], radius=6, fill=PANEL, outline=EDGE)
     fillw = int((W - 2 * M) * 0.281)
     d.rounded_rectangle([M, 374, M + fillw, 396], radius=6, fill=ROSE)
-    d.text((M + fillw + 14, 375), "2.81 KB of 10 KB", font=f(MONO, 14), fill=PALE)
+    d.text((M + fillw + 14, 375), "2.81 KB of 10 KB", font=f(MONO, 15), fill=PALE)
 
-    stats(d, 424, [("235", "rank"), ("53.5%", "accuracy"), ("41.0%", "F1"),
+    stats(d, 418, [("235", "rank"), ("53.5%", "accuracy"), ("41.0%", "F1"),
                    ("100%", "parse rate"), ("$0.00040", "cost per problem")])
-    d.text((M, 534), "A model that always answers the same way scores 50 per cent, so accuracy alone proves nothing.",
+    d.text((M, 544), "A model that always answers the same way scores 50 per cent, so accuracy alone proves nothing.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Mathematics Distillation, Stage 1",
-         "github.com/Amey-Thakur/SAIR-MATHEMATICS-DISTILLATION-CHALLENGE")
+    foot(d, "Mathematics Distillation, Stage 1")
     return im
 
 
@@ -253,15 +258,14 @@ def stage2(i):
 
     panel(d, [M, 346, W - M, 452])
     d.text((M + 20, 358), "the shape of a goal the solver closes", font=f(UI, 13), fill=DIM)
-    for k, ln in enumerate(["theorem eq (G : Type) (op : G \u2192 G \u2192 G)",
-                            "    (h : \u2200 x y, op x y = op y x) : \u2200 x y, op x y = op y x := by"]):
+    for k, ln in enumerate(["example (G : Type) (op : G → G → G) (x y : G)",
+                            "    (h : op x y = op y x) : op y x = op x y := by"]):
         d.text((M + 20, 384 + k * 24), ln, font=f(MONO, 15), fill=PALE)
-    d.text((M + 20, 424), "  intro x y" + " \u00b7" * (int(t * 4) % 4), font=f(MONO, 15), fill=ROSE)
+    d.text((M + 20, 424), "  exact h.symm" + " \u00b7" * (int(t * 4) % 4), font=f(MONO, 15), fill=ROSE)
 
-    stats(d, 476, [("500 KB", "solver budget"), ("Lean 4", "certificate"),
+    stats(d, 470, [("500 KB", "solver budget"), ("Lean 4", "certificate"),
                    ("deterministic", "the judge"), ("31 Aug 2026", "Stage 2 closes")])
-    foot(d, "Mathematics Distillation, Stage 2",
-         "github.com/Amey-Thakur/SAIR-MATHEMATICS-DISTILLATION-CHALLENGE")
+    foot(d, "Mathematics Distillation, Stage 2")
     return im
 
 
