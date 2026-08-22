@@ -2,6 +2,8 @@
 
 <a href="https://competition.sair.foundation/competitions/igp24/overview" title="SAIR Foundation, open the competition"><img src=".github/assets/sair-mark.png" alt="SAIR Foundation mark, links to the competition" width="76"></a>
 
+<img src=".github/assets/igp24.gif" alt="Degree 24 polynomials searched against 25,000 transitive groups, with a running count of the target group and the share of the space covered." width="760">
+
 # Inverse Galois Problem (IGP24)
 
 **Twenty-five thousand groups, and a search for polynomials that realise them.**
