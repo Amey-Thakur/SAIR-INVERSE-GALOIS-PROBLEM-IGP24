@@ -100,8 +100,8 @@ def stats(d, y, cells):
         d.text((x + 2, y + 66), small, font=f(UI, 16), fill=DIM)
 
 
-def foot(d, competition, t=0.0):
-    """One line, three zones, over a loop bar that advances every frame."""
+def foot(d, competition):
+    """One line, three zones: who made it, what it is, where to find more."""
     d.line([M, H - 62, W - M, H - 62], fill=EDGE)
     y = H - 42
     d.text((M, y), "Amey Thakur", font=f(SEMI, 22), fill=INK)
@@ -110,7 +110,6 @@ def foot(d, competition, t=0.0):
     link = "github.com/Amey-Thakur"
     d.text((W - M - d.textlength(link, font=f(MONO, 17)), y + 4), link,
            font=f(MONO, 17), fill=ROSE)
-    d.line([M, H - 8, M + int((W - 2 * M) * t), H - 8], fill=ROSE, width=2)
 
 
 def pipeline(d, t, boxes):
@@ -121,9 +120,11 @@ def pipeline(d, t, boxes):
         d.text((x + 20, 240), a, font=f(MONO, 20), fill=INK if on else PALE)
         d.text((x + 20, 274), b, font=f(UI, 15), fill=ROSE if on else DIM)
         if k < 2:
-            prog = max(0.0, min(1.0, ((t * 3) % 3 - k) * 2))
-            d.line([x + wbox + 6, 267, x + wbox + 46, 267], fill=EDGE, width=2)
-            d.line([x + wbox + 6, 267, x + wbox + 6 + int(40 * prog), 267], fill=ROSE, width=3)
+            x0, x1 = x + wbox + 6, x + wbox + 46
+            d.line([x0, 267, x1, 267], fill=EDGE, width=2)
+            travel = (t * 2 + k * 0.5) % 1.0
+            dx = x0 + (x1 - x0) * travel
+            d.ellipse([dx - 4, 263, dx + 4, 271], fill=ROSE)
         x += wbox + 52
 
 
@@ -157,11 +158,13 @@ def igp24(i):
            for a in [k * math.pi / 8 for k in range(16)]]
     for a in range(16):
         d.line([pts[a], pts[(a + 5) % 16]], fill=EDGE, width=1)
-    lit = int(t * 16) % 16
+    sweep = t * 16.0
     for k, (x, y) in enumerate(pts):
-        on = k == lit
-        d.ellipse([x - 6, y - 6, x + 6, y + 6], fill=ROSE if on else BG,
-                  outline=ROSE if on else (0x8A, 0x5A, 0x74), width=2)
+        on = (sweep - k) % 16 < 1.0
+        glow = max(0.0, 1.0 - ((sweep - k) % 16))
+        r = 6 + 3 * glow
+        d.ellipse([x - r, y - r, x + r, y + r], fill=ROSE if glow > 0.05 else BG,
+                  outline=ROSE if glow > 0.05 else (0x8A, 0x5A, 0x74), width=2)
     lbl = "25,000 transitive groups"
     d.text((ox - d.textlength(lbl, font=f(UI, 14)) / 2, oy + 98), lbl, font=f(UI, 14), fill=DIM)
 
@@ -169,7 +172,7 @@ def igp24(i):
                    ("10,180", "scoreable pairs"), ("155,366", "pairs already claimed")])
     d.text((M, 544), "Scoring falls off exponentially with how many teams hold a pair.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Inverse Galois Problem (IGP24)", t)
+    foot(d, "Inverse Galois Problem (IGP24)")
     return im
 
 
@@ -220,7 +223,7 @@ def modular(i):
                    ("130", "teams"), ("exact", "the only passing answer")])
     d.text((M, 544), "Everything arrives as decimal strings, far beyond any 64-bit integer.",
            font=f(UI, 17), fill=ROSE)
-    foot(d, "Modular Arithmetic Challenge", t)
+    foot(d, "Modular Arithmetic Challenge")
     return im
 
 
@@ -244,7 +247,7 @@ def stage1(i):
                    ("100%", "parse rate"), ("$0.00040", "cost per problem")])
     d.text((M, 544), "A model that always answers the same way scores 50 per cent, so accuracy alone proves nothing.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Mathematics Distillation, Stage 1", t)
+    foot(d, "Mathematics Distillation, Stage 1")
     return im
 
 
@@ -267,7 +270,7 @@ def stage2(i):
 
     stats(d, 470, [("500 KB", "solver budget"), ("Lean 4", "certificate"),
                    ("deterministic", "the judge"), ("31 Aug 2026", "Stage 2 closes")])
-    foot(d, "Mathematics Distillation, Stage 2", t)
+    foot(d, "Mathematics Distillation, Stage 2")
     return im
 
 
