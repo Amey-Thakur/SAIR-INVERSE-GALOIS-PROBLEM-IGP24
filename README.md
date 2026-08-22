@@ -175,6 +175,22 @@ as a predictor it is very nearly exact.
 
 <br>
 
+## The result
+
+Final standing, from the leaderboard snapshot of 20 August 2026.
+
+| | |
+| --- | --- |
+| Team | AVATAR, `IGP24-T00178` |
+| Rank | 54 of 256 teams |
+| Score | 2.3559 |
+| Scoreable pairs | 10,180 |
+
+The score is small because the scoring is exponential in how many teams hold a
+pair, and every pair this factory reached was already crowded. Ten thousand
+pairs and two and a third points is the arithmetic of arriving late to a space
+that had already been swept. What follows is why that happened.
+
 ## What was learned
 
 The most useful result here is a negative one, and it was measured rather than
