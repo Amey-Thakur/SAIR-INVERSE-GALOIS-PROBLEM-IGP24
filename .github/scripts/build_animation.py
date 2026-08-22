@@ -80,10 +80,11 @@ def panel(d, box, active=False):
 
 
 def head(im, d, title, sub):
-    mark = Image.open(MARK).convert("RGBA").resize((54, 54), Image.LANCZOS)
-    im.paste(mark, (M, 28), mark)
-    d.text((M + 68, 34), "SAIR", font=f(SEMI, 27), fill=INK)
-    d.text((M + 68, 63), "Foundation for Science and AI Research", font=f(UI, 15), fill=DIM)
+    mark = Image.open(MARK).convert("RGBA").resize((56, 56), Image.LANCZOS)
+    im.paste(mark, (M, 26), mark)
+    # wordmark and strapline together span the same 26..82 band as the mark
+    d.text((M + 74, 22), "SAIR", font=f(SEMI, 30), fill=INK)
+    d.text((M + 76, 60), "Foundation for Science and AI Research", font=f(UI, 16), fill=DIM)
     d.text((M, 100), title, font=f(SEMI, 46), fill=INK)
     d.text((M + 2, 158), sub, font=f(UI, 21), fill=ROSE)
     d.line([M, 196, W - M, 196], fill=EDGE)
@@ -99,16 +100,17 @@ def stats(d, y, cells):
         d.text((x + 2, y + 66), small, font=f(UI, 16), fill=DIM)
 
 
-def foot(d, competition):
-    """One line, three zones: who made it, what it is, where to find more."""
-    d.line([M, H - 58, W - M, H - 58], fill=EDGE)
-    y = H - 38
-    d.text((M, y), "Amey Thakur", font=f(SEMI, 18), fill=INK)
-    cw = d.textlength(competition, font=f(UI, 15))
-    d.text(((W - cw) / 2, y + 1), competition, font=f(UI, 17), fill=PALE)
+def foot(d, competition, t=0.0):
+    """One line, three zones, over a loop bar that advances every frame."""
+    d.line([M, H - 62, W - M, H - 62], fill=EDGE)
+    y = H - 42
+    d.text((M, y), "Amey Thakur", font=f(SEMI, 22), fill=INK)
+    cw = d.textlength(competition, font=f(UI, 19))
+    d.text(((W - cw) / 2, y + 3), competition, font=f(UI, 19), fill=PALE)
     link = "github.com/Amey-Thakur"
-    d.text((W - M - d.textlength(link, font=f(MONO, 15)), y + 2), link,
-           font=f(MONO, 15), fill=ROSE)
+    d.text((W - M - d.textlength(link, font=f(MONO, 17)), y + 4), link,
+           font=f(MONO, 17), fill=ROSE)
+    d.line([M, H - 8, M + int((W - 2 * M) * t), H - 8], fill=ROSE, width=2)
 
 
 def pipeline(d, t, boxes):
@@ -167,7 +169,7 @@ def igp24(i):
                    ("10,180", "scoreable pairs"), ("155,366", "pairs already claimed")])
     d.text((M, 544), "Scoring falls off exponentially with how many teams hold a pair.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Inverse Galois Problem (IGP24)")
+    foot(d, "Inverse Galois Problem (IGP24)", t)
     return im
 
 
@@ -188,10 +190,10 @@ def modular(i):
         y += 52
 
     # three layers, with a pulse travelling left to right
-    ox, mid = 448, 302
-    layers = [(ox, [mid - 66, mid, mid + 66]),
-              (ox + 118, [mid - 99, mid - 33, mid + 33, mid + 99]),
-              (ox + 236, [mid - 66, mid, mid + 66])]
+    ox, mid = 448, 316
+    layers = [(ox, [mid - 56, mid, mid + 56]),
+              (ox + 118, [mid - 84, mid - 28, mid + 28, mid + 84]),
+              (ox + 236, [mid - 56, mid, mid + 56])]
     pulse = (t * 1.5) % 1.0
     for li, ((x1, ys1), (x2, ys2)) in enumerate(zip(layers, layers[1:])):
         lit = li / 2.0 <= pulse < li / 2.0 + 0.5
@@ -218,7 +220,7 @@ def modular(i):
                    ("130", "teams"), ("exact", "the only passing answer")])
     d.text((M, 544), "Everything arrives as decimal strings, far beyond any 64-bit integer.",
            font=f(UI, 17), fill=ROSE)
-    foot(d, "Modular Arithmetic Challenge")
+    foot(d, "Modular Arithmetic Challenge", t)
     return im
 
 
@@ -242,7 +244,7 @@ def stage1(i):
                    ("100%", "parse rate"), ("$0.00040", "cost per problem")])
     d.text((M, 544), "A model that always answers the same way scores 50 per cent, so accuracy alone proves nothing.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Mathematics Distillation, Stage 1")
+    foot(d, "Mathematics Distillation, Stage 1", t)
     return im
 
 
@@ -265,7 +267,7 @@ def stage2(i):
 
     stats(d, 470, [("500 KB", "solver budget"), ("Lean 4", "certificate"),
                    ("deterministic", "the judge"), ("31 Aug 2026", "Stage 2 closes")])
-    foot(d, "Mathematics Distillation, Stage 2")
+    foot(d, "Mathematics Distillation, Stage 2", t)
     return im
 
 
