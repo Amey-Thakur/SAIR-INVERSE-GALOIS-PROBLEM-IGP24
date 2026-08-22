@@ -31,7 +31,7 @@ submitted, and an honest account of where its methods ran out.
 
 <br>
 
-<img src=".github/assets/igp24.gif" alt="Degree 24 polynomials searched against 25,000 transitive groups, with the final standing: rank 54 of 256, score 2.3559, 10,180 scoreable pairs." width="100%">
+<a href="https://github.com/Amey-Thakur" title="Amey Thakur on GitHub"><img src=".github/assets/igp24.gif" alt="Degree 24 polynomials searched against 25,000 transitive groups, with the final standing: rank 54 of 256, score 2.3559, 10,180 scoreable pairs." width="100%"></a>
 
 </div>
 
