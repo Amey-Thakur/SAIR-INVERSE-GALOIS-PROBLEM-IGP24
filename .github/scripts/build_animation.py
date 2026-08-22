@@ -95,9 +95,16 @@ def stats(d, y, cells):
     d.line([M, y, W - M, y], fill=EDGE)
     span = (W - 2 * M) / len(cells)
     for i, (big, small) in enumerate(cells):
-        x = M + span * i
-        d.text((x, y + 20), big, font=f(SEMI, 34), fill=INK)
-        d.text((x + 2, y + 66), small, font=f(UI, 16), fill=DIM)
+        last = i == len(cells) - 1
+        fb, fs = f(SEMI, 34), f(UI, 16)
+        if last:
+            # flush right, so the row is justified rather than trailing off
+            d.text((W - M - d.textlength(big, font=fb), y + 20), big, font=fb, fill=INK)
+            d.text((W - M - d.textlength(small, font=fs), y + 66), small, font=fs, fill=DIM)
+        else:
+            x = M + span * i
+            d.text((x, y + 20), big, font=fb, fill=INK)
+            d.text((x + 2, y + 66), small, font=fs, fill=DIM)
 
 
 def foot(d, competition):
@@ -113,7 +120,7 @@ def foot(d, competition):
 
 
 def pipeline(d, t, boxes):
-    x, wbox = M, 336
+    x, wbox = M, (W - 2 * M - 2 * 52) // 3      # three boxes and two gaps, flush to both margins
     for k, (a, b) in enumerate(boxes):
         on = k <= (t * 3) % 3 < k + 1
         panel(d, [x, 214, x + wbox, 320], active=on)
@@ -197,17 +204,21 @@ def modular(i):
     layers = [(ox, [mid - 56, mid, mid + 56]),
               (ox + 118, [mid - 84, mid - 28, mid + 28, mid + 84]),
               (ox + 236, [mid - 56, mid, mid + 56])]
+    def mix(a, b, g):
+        return tuple(int(a[k] + (b[k] - a[k]) * g) for k in range(3))
+
     pulse = (t * 1.5) % 1.0
     for li, ((x1, ys1), (x2, ys2)) in enumerate(zip(layers, layers[1:])):
-        lit = li / 2.0 <= pulse < li / 2.0 + 0.5
+        g = max(0.0, 1.0 - abs(pulse - (li * 0.4 + 0.2)) / 0.35)
+        col = mix(EDGE, ROSE, g)
         for y1 in ys1:
             for y2 in ys2:
-                d.line([x1, y1, x2, y2], fill=ROSE if lit else EDGE, width=2 if lit else 1)
+                d.line([x1, y1, x2, y2], fill=col, width=1 + int(g > 0.5))
     for li, (x, ys) in enumerate(layers):
-        on = abs(pulse - li * 0.4) < 0.18
+        g = max(0.0, 1.0 - abs(pulse - li * 0.4) / 0.3)
         for yy in ys:
             d.ellipse([x - 16, yy - 16, x + 16, yy + 16],
-                      fill=ROSE if on else BG, outline=INK, width=2)
+                      fill=mix(BG, ROSE, g), outline=INK, width=2)
 
     panel(d, [768, 216, W - M, 402], active=True)
     d.text((792, 234), "r = (a × b) mod p", font=f(MONO, 18), fill=DIM)
