@@ -98,12 +98,13 @@ def stats(d, y, cells):
         d.text((x + 2, y + 50), small, font=f(UI, 13), fill=DIM)
 
 
-def foot(d, right):
-    d.line([M, H - 62, W - M, H - 62], fill=EDGE)
-    d.text((M, H - 48), "Amey Thakur", font=f(SEMI, 17), fill=INK)
-    d.text((M, H - 26), "github.com/Amey-Thakur", font=f(MONO, 13), fill=ROSE)
-    w = d.textlength(right, font=f(MONO, 13))
-    d.text((W - M - w, H - 26), right, font=f(MONO, 13), fill=DIM)
+def foot(d, competition, repo):
+    """Name on the left, what this is and where it lives on the right."""
+    d.line([M, H - 66, W - M, H - 66], fill=EDGE)
+    d.text((M, H - 46), "Amey Thakur", font=f(SEMI, 19), fill=INK)
+    for txt, fnt, col, dy in ((competition, f(UI, 14), PALE, -49),
+                              (repo, f(MONO, 13), ROSE, -27)):
+        d.text((W - M - d.textlength(txt, font=fnt), H + dy), txt, font=fnt, fill=col)
 
 
 def pipeline(d, t, boxes):
@@ -162,7 +163,8 @@ def igp24(i):
                    ("10,180", "scoreable pairs"), ("155,366", "pairs already claimed")])
     d.text((M, 534), "Scoring falls off exponentially with how many teams hold a pair.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "IGP24  \u00b7  closed 15 August 2026")
+    foot(d, "Inverse Galois Problem (IGP24)",
+         "github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24")
     return im
 
 
@@ -209,7 +211,8 @@ def modular(i):
                    ("130", "teams"), ("exact", "the only passing answer")])
     d.text((M, 534), "Everything arrives as decimal strings, far beyond a 64-bit integer.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Modular Arithmetic Challenge  \u00b7  closed 12 August 2026")
+    foot(d, "Modular Arithmetic Challenge",
+         "github.com/Amey-Thakur/SAIR-MODULAR-ARITHMETIC-CHALLENGE")
     return im
 
 
@@ -233,7 +236,8 @@ def stage1(i):
                    ("100%", "parse rate"), ("$0.00040", "cost per problem")])
     d.text((M, 534), "A model that always answers the same way scores 50 per cent, so accuracy alone proves nothing.",
            font=f(UI, 16), fill=ROSE)
-    foot(d, "Equational Theories, Stage 1  \u00b7  closed 20 April 2026")
+    foot(d, "Mathematics Distillation, Stage 1",
+         "github.com/Amey-Thakur/SAIR-MATHEMATICS-DISTILLATION-CHALLENGE")
     return im
 
 
@@ -256,7 +260,8 @@ def stage2(i):
 
     stats(d, 476, [("500 KB", "solver budget"), ("Lean 4", "certificate"),
                    ("deterministic", "the judge"), ("31 Aug 2026", "Stage 2 closes")])
-    foot(d, "Equational Theories, Stage 2")
+    foot(d, "Mathematics Distillation, Stage 2",
+         "github.com/Amey-Thakur/SAIR-MATHEMATICS-DISTILLATION-CHALLENGE")
     return im
 
 
