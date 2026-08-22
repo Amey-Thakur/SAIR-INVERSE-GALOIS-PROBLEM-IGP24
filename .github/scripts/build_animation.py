@@ -91,20 +91,16 @@ def head(im, d, title, sub):
 
 
 def stats(d, y, cells):
-    """A rule, then evenly spaced figure over label. Occupies 96px."""
+    """A rule, then figure-over-label blocks justified with equal gaps between."""
     d.line([M, y, W - M, y], fill=EDGE)
-    span = (W - 2 * M) / len(cells)
-    for i, (big, small) in enumerate(cells):
-        last = i == len(cells) - 1
-        fb, fs = f(SEMI, 34), f(UI, 16)
-        if last:
-            # flush right, so the row is justified rather than trailing off
-            d.text((W - M - d.textlength(big, font=fb), y + 20), big, font=fb, fill=INK)
-            d.text((W - M - d.textlength(small, font=fs), y + 66), small, font=fs, fill=DIM)
-        else:
-            x = M + span * i
-            d.text((x, y + 20), big, font=fb, fill=INK)
-            d.text((x + 2, y + 66), small, font=fs, fill=DIM)
+    fb, fs = f(SEMI, 34), f(UI, 16)
+    widths = [max(d.textlength(b, font=fb), d.textlength(s, font=fs)) for b, s in cells]
+    gap = ((W - 2 * M) - sum(widths)) / (len(cells) - 1) if len(cells) > 1 else 0
+    x = float(M)
+    for (big, small), w in zip(cells, widths):
+        d.text((x, y + 20), big, font=fb, fill=INK)
+        d.text((x, y + 66), small, font=fs, fill=DIM)
+        x += w + gap
 
 
 def foot(d, competition):
