@@ -269,7 +269,7 @@ def stage2(i):
     d.text((M + 20, 424), "  exact h.symm" + " \u00b7" * (int(t * 4) % 4), font=f(MONO, 15), fill=ROSE)
 
     stats(d, 470, [("500 KB", "solver budget"), ("Lean 4", "certificate"),
-                   ("deterministic", "the judge"), ("31 Aug 2026", "Stage 2 closes")])
+                   ("deterministic", "the judge"), ("zero", "partial credit")])
     foot(d, "Mathematics Distillation, Stage 2")
     return im
 
