@@ -27,6 +27,7 @@ submitted, and an honest account of where its methods ran out.
 [![Status](https://img.shields.io/badge/Status-Submitted-2EA043)](https://competition.sair.foundation/competitions/igp24/overview)
 [![Technology](https://img.shields.io/badge/Technology-Python_%7C_PARI%2FGP-8250DF)](https://pari.math.u-bordeaux.fr/)
 [![Database](https://img.shields.io/badge/Database-LMFDB-00838F)](https://www.lmfdb.org/)
+[![Author](https://img.shields.io/badge/Author-Amey_Thakur-0969DA)](https://github.com/Amey-Thakur)
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey)](LICENSE)
 
 <br>
