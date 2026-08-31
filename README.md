@@ -32,7 +32,7 @@ submitted, and an honest account of where its methods ran out.
 
 <br>
 
-<a href="https://github.com/Amey-Thakur" title="Amey Thakur on GitHub"><img src=".github/assets/igp24.gif" alt="Degree 24 polynomials searched against 25,000 transitive groups, with the final standing: rank 54 of 256, score 2.3559, 10,180 scoreable pairs." width="100%"></a>
+<a href="https://github.com/Amey-Thakur" title="Amey Thakur on GitHub"><img src=".github/assets/igp24-sair.gif" alt="A degree 24 polynomial over the rationals, its Galois group, and the ladder of 25000 transitive groups of degree 24, in the SAIR Foundation card style." width="100%"></a>
 
 </div>
 
@@ -171,6 +171,16 @@ as a predictor it is very nearly exact.
 > pair space. In one wave, 10,000 apparently novel clusters yielded only about
 > 771 genuinely new pairs. Any pipeline that counts clusters as discoveries
 > will report progress it has not made.
+
+<br>
+
+<div align="center">
+
+<img src=".github/assets/igp24.gif" alt="Degree 24 polynomials searched against 25,000 transitive groups, with the final standing: rank 54, score 2.3559, 10,180 scoreable pairs." width="100%">
+
+<sub>The run itself: what the factory searched, and where it finished.</sub>
+
+</div>
 
 <br>
 
