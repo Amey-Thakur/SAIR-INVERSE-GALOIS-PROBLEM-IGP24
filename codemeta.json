@@ -1,12 +1,13 @@
 {
     "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
     "@type": "SoftwareSourceCode",
-    "license": "https://spdx.org/licenses/CC-BY-4.0.html",
     "name": "SAIR Inverse Galois Problem Challenge (IGP24)",
-    "version": "1.0.0",
-    "runtimePlatform": [
-        "PARI/GP 2.15+",
-        "Python 3.10+"
+    "description": "An algebraic laboratory tracking and synthesizing explicit integer polynomial realizations for the 25,000 transitive permutation groups of degree 24.",
+    "identifier": "SAIR-INVERSE-GALOIS-PROBLEM-IGP24",
+    "license": "https://spdx.org/licenses/CC-BY-4.0.html",
+    "programmingLanguage": [
+        "Python",
+        "Markdown"
     ],
     "author": [
         {
@@ -16,9 +17,43 @@
             "@id": "https://orcid.org/0000-0001-5644-1575"
         }
     ],
-    "description": "An algebraic laboratory tracking and synthesizing explicit integer polynomial realizations for the 25,000 transitive permutation groups of degree 24.",
-    "programmingLanguage": [
-        "Python",
-        "Markdown"
-    ]
+    "dateCreated": "2026-07-16",
+    "dateReleased": "2026-07-16",
+    "codeRepository": "https://github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24",
+    "developmentStatus": "complete",
+    "runtimePlatform": [
+        "PARI/GP 2.15+",
+        "Python 3.10+"
+    ],
+    "keywords": [
+        "Abstract Algebra",
+        "Competition",
+        "Computational Mathematics",
+        "Field Theory",
+        "Galois Groups",
+        "Galois Theory",
+        "IGP24",
+        "Inverse Galois Problem",
+        "LMFDB",
+        "Mathematics",
+        "Number Fields",
+        "Number Theory",
+        "PARI Gp",
+        "Polynomials",
+        "SAIR",
+        "SAIR Foundation",
+        "Dataset",
+        "John Jones",
+        "Jen Paulhus",
+        "David Roe",
+        "Andrew Sutherland",
+        "Terence Tao",
+        "Amey Thakur",
+        "amey",
+        "ameythakur",
+        "amey-thakur",
+        "ameyarc"
+    ],
+    "url": "https://competition.sair.foundation/competitions/igp24/overview",
+    "version": "1.0.0"
 }

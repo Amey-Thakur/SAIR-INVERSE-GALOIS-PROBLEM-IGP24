@@ -8,3 +8,7 @@ title: "SAIR Inverse Galois Problem Challenge (IGP24)"
 version: 1.0.0
 date-released: 2026-07-16
 url: "https://github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24"
+identifiers:
+  - type: other
+    value: "2026-07-16"
+    description: "Date this repository was created on GitHub."
