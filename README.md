@@ -296,9 +296,10 @@ irreducible, before anything is sent.
 | Repository | Challenge |
 | :--- | :--- |
 | [SAIR-INVERSE-GALOIS-PROBLEM-IGP24](https://github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24) | Inverse Galois Problem in degree 24 |
-| [SAIR-MATHEMATICS-DISTILLATION-CHALLENGE](https://github.com/Amey-Thakur/SAIR-MATHEMATICS-DISTILLATION-CHALLENGE) | Equational Theories, Stage 1 and Stage 2 |
+| [SAIR-ANDREWS-CURTIS-CHALLENGE](https://github.com/Amey-Thakur/SAIR-ANDREWS-CURTIS-CHALLENGE) | Short trivialisations of balanced presentations |
+| [SAIR-LEAN-KERNEL-CHALLENGE](https://github.com/Amey-Thakur/SAIR-LEAN-KERNEL-CHALLENGE) | Verified computation in the Lean 4 kernel |
 | [SAIR-MODULAR-ARITHMETIC-CHALLENGE](https://github.com/Amey-Thakur/SAIR-MODULAR-ARITHMETIC-CHALLENGE) | Exact modular multiplication by neural induction |
-| [SAIR-LEAN-KERNEL-CHALLENGE](https://github.com/Amey-Thakur/SAIR-LEAN-KERNEL-CHALLENGE) | An independent proof checker for Lean 4 |
+| [SAIR-MATHEMATICS-DISTILLATION-CHALLENGE](https://github.com/Amey-Thakur/SAIR-MATHEMATICS-DISTILLATION-CHALLENGE) | Equational Theories, Stage 1 and Stage 2 |
 
 <br>
 
