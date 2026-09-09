@@ -8,6 +8,15 @@ title: "SAIR Inverse Galois Problem Challenge (IGP24)"
 version: 1.0.0
 date-released: 2026-07-16
 url: "https://github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24"
+repository-code: "https://github.com/Amey-Thakur/SAIR-INVERSE-GALOIS-PROBLEM-IGP24"
+license: CC-BY-4.0
+keywords:
+  - inverse galois problem
+  - galois theory
+  - algebraic number theory
+  - transitive groups
+  - degree 24 polynomials
+  - lmfdb
 identifiers:
   - type: other
     value: "2026-07-16"
