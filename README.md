@@ -186,12 +186,13 @@ as a predictor it is very nearly exact.
 
 ## The result
 
-Final standing, from the leaderboard snapshot of 20 August 2026.
+Final standing, from the published leaderboard. The competition closed on
+15 August 2026 and the leaderboard ranks 140 teams.
 
 | | |
 | --- | --- |
 | Team | AVATAR, `IGP24-T00178` |
-| Rank | 54 of 256 teams |
+| Rank | 54 of 140 teams |
 | Score | 2.3559 |
 | Scoreable pairs | 10,180 |
 
