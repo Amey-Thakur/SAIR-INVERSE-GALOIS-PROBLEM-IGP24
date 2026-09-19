@@ -50,3 +50,9 @@ runs/
 
 # Generated submission artifacts
 scripts/api_payload.json
+
+# Run detritus: pids and captured stdout/stderr from long campaign jobs
+*.pid
+*.err
+*.out
+data/*_run.log
