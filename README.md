@@ -40,6 +40,19 @@ submitted, and an honest account of where its methods ran out.
 
 <br>
 
+## Paper
+
+The work in this repository is written up as a preprint, dated
+11 November 2026.
+
+> **Chebotarev Fingerprints: Identifying Degree-24 Galois Groups Without Computer Algebra**
+
+The compiled PDF is archived in the research index, at
+[`papers/II-inverse-galois.pdf`](https://github.com/Amey-Thakur/SAIR-FOUNDATION-FOR-SCIENCE-AND-AI-RESEARCH/blob/main/papers/II-inverse-galois.pdf). The index carries the preprint identifier
+once it is live, and lists the other four papers from this programme.
+
+---
+
 ## The problem
 
 The inverse Galois problem asks whether every finite group is the Galois group
